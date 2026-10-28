@@ -33,7 +33,7 @@ class ModelCapabilities(Contract):
     streaming: bool = False
     reasoning_mode: bool = False
     max_context_tokens: int | None = None
-    max_output_tokens: int | None = None
+    max_output_tokens: int | None = Field(default=None, ge=0)
 
 
 class ModelConfig(Contract):
@@ -66,10 +66,10 @@ class ModelEntry(Contract):
 
 
 class ModelUsage(Contract):
-    input_tokens: int | None = None
-    output_tokens: int | None = None
-    cached_input_tokens: int | None = None
-    reasoning_tokens: int | None = None
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    cached_input_tokens: int | None = Field(default=None, ge=0)
+    reasoning_tokens: int | None = Field(default=None, ge=0)
 
 
 class ToolCall(Contract):
