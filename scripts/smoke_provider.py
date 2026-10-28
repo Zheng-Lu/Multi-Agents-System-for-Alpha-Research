@@ -1,0 +1,38 @@
+"""Opt-in paid tool-loop smoke test. Never imported or invoked by ordinary CI."""
+
+import argparse
+import asyncio
+
+from alpha_mas.models import Budget, ModelAssignments, ModelConfig, ResearchRun, RunRequest
+from alpha_mas.providers.registry import ROOT, Registry
+from alpha_mas.runtime import Runtime
+from alpha_mas.storage.sqlite import Store
+from dotenv import load_dotenv
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--allow-paid", action="store_true", required=True)
+    parser.add_argument(
+        "--provider",
+        choices=["glm", "deepseek", "qwen", "kimi", "openai", "anthropic"],
+        required=True,
+    )
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--max-cost", type=float, default=0.02)
+    args = parser.parse_args()
+    load_dotenv(ROOT / ".env")
+    config = ModelConfig(provider=args.provider, model=args.model)
+    run = ResearchRun(
+        request=RunRequest(
+            mode="live",
+            models=ModelAssignments(default=config),
+            budget=Budget(max_cost_usd=args.max_cost, max_retries=0),
+        )
+    )
+    store = Store(str(ROOT / "alpha-smoke.db"))
+    runtime = Runtime(run, store, Registry())
+    runtime.router.preflight()
+    asyncio.run(runtime.execute())
+    print(store.run(run.run_id).model_dump_json(indent=2))
+    if run.status != "completed":
+        raise SystemExit(1)

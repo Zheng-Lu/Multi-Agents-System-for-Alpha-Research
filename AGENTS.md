@@ -23,6 +23,7 @@ uv run ruff format --check backend scripts
 uv run mypy
 uv run pytest -q
 npm ci --prefix frontend
+npm run format:check --prefix frontend
 npm run lint --prefix frontend
 npm test --prefix frontend
 npm run build --prefix frontend

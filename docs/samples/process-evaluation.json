@@ -1,0 +1,353 @@
+{
+  "evaluation_version": "process-v1",
+  "dataset": "synthetic-v1",
+  "mode": "demo",
+  "controls": "Same fixed task, dataset, tools, Mock Provider and budgets. Generator-Verifier additionally exercises an injected invalid candidate.",
+  "limitations": "Simulated model tokens are approximations. Local wall time is not API latency. Mechanism-specific coverage differs; these are process checks, not causal quality rankings or evidence of market alpha.",
+  "runs": [
+    {
+      "repetition": 0,
+      "pattern": "baseline",
+      "status": "completed",
+      "models": {
+        "default": {
+          "provider": "mock",
+          "model": "deterministic-v1",
+          "max_output_tokens": 1500,
+          "reasoning": "default",
+          "stream": false,
+          "response_schema": null
+        },
+        "roles": {},
+        "fallbacks": {},
+        "authorize_fallback_data_transfer": false
+      },
+      "budget": {
+        "max_cost_usd": 0.1,
+        "max_tokens_per_agent": 48000,
+        "max_calls_per_agent": 10,
+        "max_steps": 80,
+        "max_runtime_seconds": 120,
+        "max_retries": 1
+      },
+      "metrics": {
+        "model_calls": 7,
+        "tool_calls": 3,
+        "input_tokens": 4728,
+        "output_tokens": 350,
+        "estimated_cost_usd": 0.0,
+        "cost_complete": true,
+        "latency_ms": 958.6644429946318,
+        "retries": 0,
+        "rate_limit_events": 0,
+        "coordination_events": 0
+      },
+      "report_present": true,
+      "evidence_coverage": 3,
+      "invalid_candidate_excluded": true,
+      "leak_detected": false,
+      "computed_results": [
+        {
+          "factor": "momentum",
+          "net_return": 0.039164163659636264,
+          "test_ic": 0.09166666666666667
+        },
+        {
+          "factor": "earnings",
+          "net_return": -0.0036391781263621636,
+          "test_ic": 0.1343537414965986
+        },
+        {
+          "factor": "sentiment",
+          "net_return": -0.01610732204113352,
+          "test_ic": 0.06541840036985667
+        }
+      ]
+    },
+    {
+      "repetition": 0,
+      "pattern": "generator_verifier",
+      "status": "completed",
+      "models": {
+        "default": {
+          "provider": "mock",
+          "model": "deterministic-v1",
+          "max_output_tokens": 1500,
+          "reasoning": "default",
+          "stream": false,
+          "response_schema": null
+        },
+        "roles": {},
+        "fallbacks": {},
+        "authorize_fallback_data_transfer": false
+      },
+      "budget": {
+        "max_cost_usd": 0.1,
+        "max_tokens_per_agent": 48000,
+        "max_calls_per_agent": 10,
+        "max_steps": 80,
+        "max_runtime_seconds": 120,
+        "max_retries": 1
+      },
+      "metrics": {
+        "model_calls": 9,
+        "tool_calls": 4,
+        "input_tokens": 7884,
+        "output_tokens": 450,
+        "estimated_cost_usd": 0.0,
+        "cost_complete": true,
+        "latency_ms": 814.0162089985097,
+        "retries": 0,
+        "rate_limit_events": 0,
+        "coordination_events": 5
+      },
+      "report_present": true,
+      "evidence_coverage": 2,
+      "invalid_candidate_excluded": true,
+      "leak_detected": true,
+      "computed_results": [
+        {
+          "factor": "future_leak",
+          "net_return": 3.3686036958962937,
+          "test_ic": 1.0
+        },
+        {
+          "factor": "momentum",
+          "net_return": 0.039164163659636264,
+          "test_ic": 0.09166666666666667
+        }
+      ]
+    },
+    {
+      "repetition": 0,
+      "pattern": "orchestrator_subagent",
+      "status": "completed",
+      "models": {
+        "default": {
+          "provider": "mock",
+          "model": "deterministic-v1",
+          "max_output_tokens": 1500,
+          "reasoning": "default",
+          "stream": false,
+          "response_schema": null
+        },
+        "roles": {},
+        "fallbacks": {},
+        "authorize_fallback_data_transfer": false
+      },
+      "budget": {
+        "max_cost_usd": 0.1,
+        "max_tokens_per_agent": 48000,
+        "max_calls_per_agent": 10,
+        "max_steps": 80,
+        "max_runtime_seconds": 120,
+        "max_retries": 1
+      },
+      "metrics": {
+        "model_calls": 9,
+        "tool_calls": 4,
+        "input_tokens": 2226,
+        "output_tokens": 450,
+        "estimated_cost_usd": 0.0,
+        "cost_complete": true,
+        "latency_ms": 1860.1929180003935,
+        "retries": 0,
+        "rate_limit_events": 0,
+        "coordination_events": 6
+      },
+      "report_present": true,
+      "evidence_coverage": 3,
+      "invalid_candidate_excluded": true,
+      "leak_detected": false,
+      "computed_results": [
+        {
+          "factor": "earnings",
+          "net_return": -0.0036391781263621636,
+          "test_ic": 0.1343537414965986
+        },
+        {
+          "factor": "momentum",
+          "net_return": 0.039164163659636264,
+          "test_ic": 0.09166666666666667
+        },
+        {
+          "factor": "sentiment",
+          "net_return": -0.01610732204113352,
+          "test_ic": 0.06541840036985667
+        }
+      ]
+    },
+    {
+      "repetition": 1,
+      "pattern": "baseline",
+      "status": "completed",
+      "models": {
+        "default": {
+          "provider": "mock",
+          "model": "deterministic-v1",
+          "max_output_tokens": 1500,
+          "reasoning": "default",
+          "stream": false,
+          "response_schema": null
+        },
+        "roles": {},
+        "fallbacks": {},
+        "authorize_fallback_data_transfer": false
+      },
+      "budget": {
+        "max_cost_usd": 0.1,
+        "max_tokens_per_agent": 48000,
+        "max_calls_per_agent": 10,
+        "max_steps": 80,
+        "max_runtime_seconds": 120,
+        "max_retries": 1
+      },
+      "metrics": {
+        "model_calls": 7,
+        "tool_calls": 3,
+        "input_tokens": 4728,
+        "output_tokens": 350,
+        "estimated_cost_usd": 0.0,
+        "cost_complete": true,
+        "latency_ms": 968.7554789998103,
+        "retries": 0,
+        "rate_limit_events": 0,
+        "coordination_events": 0
+      },
+      "report_present": true,
+      "evidence_coverage": 3,
+      "invalid_candidate_excluded": true,
+      "leak_detected": false,
+      "computed_results": [
+        {
+          "factor": "momentum",
+          "net_return": 0.039164163659636264,
+          "test_ic": 0.09166666666666667
+        },
+        {
+          "factor": "earnings",
+          "net_return": -0.0036391781263621636,
+          "test_ic": 0.1343537414965986
+        },
+        {
+          "factor": "sentiment",
+          "net_return": -0.01610732204113352,
+          "test_ic": 0.06541840036985667
+        }
+      ]
+    },
+    {
+      "repetition": 1,
+      "pattern": "generator_verifier",
+      "status": "completed",
+      "models": {
+        "default": {
+          "provider": "mock",
+          "model": "deterministic-v1",
+          "max_output_tokens": 1500,
+          "reasoning": "default",
+          "stream": false,
+          "response_schema": null
+        },
+        "roles": {},
+        "fallbacks": {},
+        "authorize_fallback_data_transfer": false
+      },
+      "budget": {
+        "max_cost_usd": 0.1,
+        "max_tokens_per_agent": 48000,
+        "max_calls_per_agent": 10,
+        "max_steps": 80,
+        "max_runtime_seconds": 120,
+        "max_retries": 1
+      },
+      "metrics": {
+        "model_calls": 9,
+        "tool_calls": 4,
+        "input_tokens": 7884,
+        "output_tokens": 450,
+        "estimated_cost_usd": 0.0,
+        "cost_complete": true,
+        "latency_ms": 947.754223998345,
+        "retries": 0,
+        "rate_limit_events": 0,
+        "coordination_events": 5
+      },
+      "report_present": true,
+      "evidence_coverage": 2,
+      "invalid_candidate_excluded": true,
+      "leak_detected": true,
+      "computed_results": [
+        {
+          "factor": "future_leak",
+          "net_return": 3.3686036958962937,
+          "test_ic": 1.0
+        },
+        {
+          "factor": "momentum",
+          "net_return": 0.039164163659636264,
+          "test_ic": 0.09166666666666667
+        }
+      ]
+    },
+    {
+      "repetition": 1,
+      "pattern": "orchestrator_subagent",
+      "status": "completed",
+      "models": {
+        "default": {
+          "provider": "mock",
+          "model": "deterministic-v1",
+          "max_output_tokens": 1500,
+          "reasoning": "default",
+          "stream": false,
+          "response_schema": null
+        },
+        "roles": {},
+        "fallbacks": {},
+        "authorize_fallback_data_transfer": false
+      },
+      "budget": {
+        "max_cost_usd": 0.1,
+        "max_tokens_per_agent": 48000,
+        "max_calls_per_agent": 10,
+        "max_steps": 80,
+        "max_runtime_seconds": 120,
+        "max_retries": 1
+      },
+      "metrics": {
+        "model_calls": 9,
+        "tool_calls": 4,
+        "input_tokens": 2226,
+        "output_tokens": 450,
+        "estimated_cost_usd": 0.0,
+        "cost_complete": true,
+        "latency_ms": 1416.7422960017575,
+        "retries": 0,
+        "rate_limit_events": 0,
+        "coordination_events": 6
+      },
+      "report_present": true,
+      "evidence_coverage": 3,
+      "invalid_candidate_excluded": true,
+      "leak_detected": false,
+      "computed_results": [
+        {
+          "factor": "earnings",
+          "net_return": -0.0036391781263621636,
+          "test_ic": 0.1343537414965986
+        },
+        {
+          "factor": "momentum",
+          "net_return": 0.039164163659636264,
+          "test_ic": 0.09166666666666667
+        },
+        {
+          "factor": "sentiment",
+          "net_return": -0.01610732204113352,
+          "test_ic": 0.06541840036985667
+        }
+      ]
+    }
+  ]
+}
