@@ -1,0 +1,135 @@
+[
+  {
+    "provider": "mock",
+    "model": "deterministic-v1",
+    "documentation": "internal:mock-v1",
+    "verified_on": "2026-10-28",
+    "smoke_tested": true,
+    "notes": "Simulated decisions; real research tools.",
+    "capabilities": {
+      "tool_calling": true,
+      "parallel_tool_calls": null,
+      "structured_output": false,
+      "streaming": false,
+      "reasoning_mode": false,
+      "max_output_tokens": 8192
+    },
+    "pricing": {
+      "currency": "USD",
+      "effective_date": "2026-10-28",
+      "input_per_million": 0,
+      "output_per_million": 0,
+      "cached_input_per_million": 0,
+      "source": "internal:simulation"
+    }
+  },
+  {
+    "provider": "glm",
+    "model": "glm-4.7",
+    "documentation": "https://docs.z.ai/api-reference/llm/chat-completion",
+    "verified_on": "2026-10-28",
+    "smoke_tested": false,
+    "notes": "Documentation checked; live smoke pending.",
+    "capabilities": {
+      "tool_calling": true,
+      "parallel_tool_calls": null,
+      "structured_output": true,
+      "streaming": false,
+      "reasoning_mode": true,
+      "max_output_tokens": 8192
+    },
+    "pricing": {
+      "currency": "USD",
+      "effective_date": "2026-10-28",
+      "input_per_million": 0.6,
+      "output_per_million": 2.2,
+      "cached_input_per_million": 0.11,
+      "source": "https://docs.z.ai/guides/overview/pricing"
+    }
+  },
+  {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "documentation": "https://api-docs.deepseek.com/guides/tool_calls/",
+    "verified_on": "2026-10-28",
+    "smoke_tested": false,
+    "notes": "Current documented alias; pricing not recoverable from fetched page. Configure rates.",
+    "capabilities": {
+      "tool_calling": true,
+      "parallel_tool_calls": null,
+      "structured_output": true,
+      "streaming": false,
+      "reasoning_mode": true,
+      "max_output_tokens": 8192
+    },
+    "pricing": null
+  },
+  {
+    "provider": "qwen",
+    "model": "qwen-plus",
+    "documentation": "https://help.aliyun.com/en/model-studio/compatibility-of-openai-with-dashscope",
+    "verified_on": "2026-10-28",
+    "smoke_tested": false,
+    "notes": "Requires QWEN_BASE_URL matching region/workspace; pricing is endpoint/tier dependent.",
+    "capabilities": {
+      "tool_calling": true,
+      "parallel_tool_calls": null,
+      "structured_output": false,
+      "streaming": false,
+      "reasoning_mode": false,
+      "max_output_tokens": 8192
+    },
+    "pricing": null
+  },
+  {
+    "provider": "kimi",
+    "model": "kimi-k3.1-pro",
+    "documentation": "https://platform.kimi.ai/docs/guide/use-kimi-api-to-complete-tool-calls",
+    "verified_on": "2026-10-28",
+    "smoke_tested": false,
+    "notes": "General inference API; pricing table not recoverable. Reasoning overrides not validated.",
+    "capabilities": {
+      "tool_calling": true,
+      "parallel_tool_calls": null,
+      "structured_output": false,
+      "streaming": false,
+      "reasoning_mode": false,
+      "max_output_tokens": 8192
+    },
+    "pricing": null
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "documentation": "https://developers.openai.com/api/docs/guides/function-calling",
+    "verified_on": "2026-10-28",
+    "smoke_tested": false,
+    "notes": "Native Responses API. Pricing depends on service tier; configure explicitly.",
+    "capabilities": {
+      "tool_calling": true,
+      "parallel_tool_calls": null,
+      "structured_output": false,
+      "streaming": false,
+      "reasoning_mode": false,
+      "max_output_tokens": 8192
+    },
+    "pricing": null
+  },
+  {
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "documentation": "https://platform.claude.com/docs/en/models/haiku-5-5/overview",
+    "verified_on": "2026-10-28",
+    "smoke_tested": false,
+    "notes": "Native Messages API. Tiered/cache-write pricing requires explicit local profile.",
+    "capabilities": {
+      "tool_calling": true,
+      "parallel_tool_calls": null,
+      "structured_output": false,
+      "streaming": false,
+      "reasoning_mode": false,
+      "max_output_tokens": 8192
+    },
+    "pricing": null
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "version": "synthetic-v1",
+  "seed": 20261028,
+  "synthetic": true,
+  "universe": [
+    "SYN01",
+    "SYN02",
+    "SYN03",
+    "SYN04",
+    "SYN05",
+    "SYN06",
+    "SYN07",
+    "SYN08"
+  ],
+  "target_days": 5,
+  "files": {
+    "earnings.csv": "1d87884ab2c4c210aaf4e6fcd81ee1067466b4c9790dd49913e1ae35f4b6da70",
+    "news.csv": "6deb4196135c938908227b97fae5813e5c1bf663b48b2b9bacd3f8ff953e960f",
+    "prices.csv": "0c19cbee1a65e1a2e63efc06f40a7a3f4f27091b09ff00c8cf63f79391e4ca35"
+  }
+}

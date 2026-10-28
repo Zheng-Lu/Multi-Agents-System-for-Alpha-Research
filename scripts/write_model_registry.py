@@ -1,0 +1,89 @@
+"""Dated documentation snapshot. Recheck official sources before paid benchmarks."""
+
+import json
+from pathlib import Path
+
+
+def entry(provider, model, doc, *, price=None, reasoning=False, structured=False, notes=""):
+    return dict(
+        provider=provider,
+        model=model,
+        documentation=doc,
+        verified_on="2026-10-28",
+        smoke_tested=provider == "mock",
+        notes=notes or "Documentation checked; live smoke pending.",
+        capabilities=dict(
+            tool_calling=True,
+            parallel_tool_calls=None,
+            structured_output=structured,
+            streaming=False,
+            reasoning_mode=reasoning,
+            max_output_tokens=8192,
+        ),
+        pricing=price,
+    )
+
+
+def price(inp, out, cached, source):
+    return dict(
+        currency="USD",
+        effective_date="2026-10-28",
+        input_per_million=inp,
+        output_per_million=out,
+        cached_input_per_million=cached,
+        source=source,
+    )
+
+
+entries = [
+    entry(
+        "mock",
+        "deterministic-v1",
+        "internal:mock-v1",
+        price=price(0, 0, 0, "internal:simulation"),
+        notes="Simulated decisions; real research tools.",
+    ),
+    entry(
+        "glm",
+        "glm-4.7",
+        "https://docs.z.ai/api-reference/llm/chat-completion",
+        price=price(0.6, 2.2, 0.11, "https://docs.z.ai/guides/overview/pricing"),
+        reasoning=True,
+        structured=True,
+    ),
+    entry(
+        "deepseek",
+        "deepseek-flash",
+        "https://api-docs.deepseek.com/guides/tool_calls/",
+        reasoning=True,
+        structured=True,
+        notes="Current documented alias; pricing unavailable in fetched page. Configure rates.",
+    ),
+    entry(
+        "qwen",
+        "qwen-plus",
+        "https://help.aliyun.com/en/model-studio/compatibility-of-openai-with-dashscope",
+        notes="Requires matching QWEN_BASE_URL; pricing is endpoint/tier dependent.",
+    ),
+    entry(
+        "kimi",
+        "kimi-k3.1-pro",
+        "https://platform.kimi.ai/docs/guide/use-kimi-api-to-complete-tool-calls",
+        notes="General inference; pricing unavailable. Reasoning overrides not validated.",
+    ),
+    entry(
+        "openai",
+        "gpt-6-luna",
+        "https://developers.openai.com/api/docs/guides/function-calling",
+        notes="Native Responses API. Pricing depends on service tier; configure explicitly.",
+    ),
+    entry(
+        "anthropic",
+        "claude-haiku-5-5",
+        "https://platform.claude.com/docs/en/models/haiku-5-5/overview",
+        notes="Native Messages API. Tiered/cache-write pricing requires explicit local profile.",
+    ),
+]
+(Path(__file__).resolve().parents[1] / "config/models.json").write_text(
+    json.dumps(entries, indent=2) + "\n"
+)
