@@ -779,3 +779,100 @@ a:focus-visible {
 .react-flow__controls button svg {
   fill: #183422;
 }
+
+.graph-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #293d31;
+  background: #122219;
+}
+.graph-actions,
+.graph-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.graph-toolbar button {
+  padding: 6px 10px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.graph-toolbar button[aria-pressed='true'] {
+  border-color: #8ecbad;
+  background: #294835;
+}
+.graph-options label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 10px;
+  color: #b1c7b9;
+  cursor: pointer;
+}
+.graph-options input {
+  width: auto;
+  margin: 0;
+  accent-color: #9be5b6;
+}
+.graph.graph-expanded {
+  height: 72vh;
+  min-height: 440px;
+}
+.graph-hint {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 14px;
+  border-top: 1px solid #293d31;
+  color: #86a18e;
+  font-size: 9px;
+}
+.graph-workspace .react-flow__node {
+  cursor: grab;
+  transition: opacity 0.15s;
+}
+.graph-workspace .react-flow__node.dragging {
+  cursor: grabbing;
+  box-shadow: 0 0 0 2px #9be5b64d;
+}
+.graph-workspace .react-flow__handle {
+  background: #789d87;
+  border: 1px solid #bfd6c5;
+  width: 5px;
+  height: 5px;
+  pointer-events: none;
+}
+.graph-workspace .react-flow__minimap {
+  background: #15291e;
+  border: 1px solid #41624c;
+  border-radius: 5px;
+  width: 140px;
+  height: 90px;
+}
+.graph-workspace .react-flow__edge-text {
+  font-size: 10px !important;
+}
+@media (max-width: 760px) {
+  .graph-toolbar {
+    gap: 12px;
+  }
+  .graph-options {
+    gap: 14px;
+  }
+  .graph-hint {
+    font-size: 9px;
+  }
+  .graph-workspace .react-flow__minimap {
+    display: none;
+  }
+  .graph.graph-expanded {
+    height: 75vh;
+  }
+}

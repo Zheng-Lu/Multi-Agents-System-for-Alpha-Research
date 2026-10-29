@@ -31,3 +31,31 @@ of measurements. There is no bundled fictional transcript pretending to be a liv
 
 Do not present the initial increment as the complete five-pattern leadership demonstration. The
 final hybrid earnings-event story requires Phase 2/3 implementation and separate acceptance tests.
+
+
+## Arranging the execution graph
+
+Agents and research tools are draggable. Drag empty canvas to pan; use the zoom buttons or the
+minimap to navigate. Click an agent to inspect it and highlight its immediate relationships.
+Tool nodes can also be selected to highlight their callers. Clear highlight or click the canvas
+to restore all connections.
+
+| Control | Behavior |
+|---|---|
+| Auto arrange | Restore the layered default positions and clear this run's saved manual layout. |
+| Fit graph | Center and zoom to the currently visible nodes without changing their positions. |
+| Expand graph | Give the canvas more screen height; Collapse graph restores the regular view. |
+| Show tools | Hide/show tool nodes and their links to concentrate on agent coordination. |
+| Edge labels | Hide/show the short handoff and feedback labels. |
+
+Solid green arrows show forward handoffs; gold feedback arrows use a separate route; dashed arrows
+show tool calls. Repeated handoffs are aggregated with a count. This is a view of recorded events,
+not an editable execution plan: nodes can move, but links cannot be rewired or deleted.
+
+Manual positions persist per run in local browser storage across tab switches, reloads and replay.
+Streaming events still update statuses and evidence counts, but do not reset dragged positions or
+a manually adjusted viewport. Layouts are local to the browser, not shared with other users. If
+browser storage is unavailable, the layout remains usable for the current view. No model calls
+are needed to move, highlight or filter the graph.
+
+![Graph controls and a manually arranged run](graph-controls.png)

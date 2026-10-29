@@ -27,6 +27,9 @@ uv run uvicorn alpha_mas.api.app:app --host 127.0.0.1 --port 8000
 Open **http://127.0.0.1:8000**. API documentation: **http://127.0.0.1:8000/docs**.
 Run Generator–Verifier to observe leakage rejection, feedback, a computed revision and acceptance.
 Click an agent, open the research report, then replay the persisted trace without inference.
+Drag agents or tools to rearrange the graph; your layout is saved per run in this browser.
+Use **Auto arrange**, **Fit graph**, **Expand graph**, **Show tools**, and **Edge labels** to
+simplify busy views. Click a node to highlight its connections; click empty canvas to clear it.
 
 For frontend development, run the API above and `npm run dev --prefix frontend` in another
 terminal; open http://127.0.0.1:5173. Vite proxies `/api` to the backend.

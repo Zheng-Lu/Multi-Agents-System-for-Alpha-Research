@@ -125,3 +125,27 @@ are retained; restart the backend before starting a fresh run with updated code.
 Final checks for the fan-out fix: 46 backend tests, Ruff lint/format, mypy, React interaction test,
 ESLint, TypeScript/Vite build, both isolated Chromium flows and six Demo Mode evaluation runs pass.
 The user's untracked .vscode directory was preserved untouched. Nothing was pushed or deployed.
+
+
+## 2026-10-29 — Interactive execution graph
+
+Enabled dragging for agents and tools, keeping manual coordinates separate from execution events.
+Layouts save per run in browser storage and restore across tab switches, reloads and replays.
+New trace events update node statuses without overwriting dragged positions. Manual viewport changes
+are respected when later nodes arrive. No backend, model, spending or execution semantics changed.
+
+Added a layered default layout, separate feedback routes, directional dashed tool links, connection
+highlighting, Auto arrange, Fit graph, Expand/Collapse, Show tools, Edge labels and a navigable
+minimap. Resetting the layout clears only the current run's saved coordinates. Nodes cannot be
+deleted and links cannot be rewired. Browser storage failures retain current-view interaction.
+No dependency was added; the existing React Flow package supplies the interaction controls.
+
+New browser coverage uses real Demo Mode traces and mouse drags, including controlled delivery of
+late events to verify stable positions and viewport. It also covers tool visibility, labels,
+inspection, saved layouts, run isolation, reset, expansion, replay and narrow-screen controls.
+See docs/demo-guide.md and docs/graph-controls.png for usage. The user's .vscode files remain untouched.
+
+Validation for the graph increment: TypeScript/Vite production build, ESLint, Prettier check, the
+React interaction test and all five Chromium flows pass. The browser checks include desktop dragging
+and narrow-screen controls. Backend code was unchanged; its test suite was not rerun for this UI-only
+increment. All executions used Demo Mode; no paid API calls were made.

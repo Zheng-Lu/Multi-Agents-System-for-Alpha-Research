@@ -547,12 +547,10 @@ export default function App() {
                     <span className="status-dot" />
                     {replaying ? `REPLAY · ${replayIndex}/${events.length}` : 'EXECUTION GRAPH'}
                   </div>
-                  <span>Click an agent to inspect its context</span>
+                  <span>Drag nodes to arrange · click an agent to inspect</span>
                 </div>
                 {visible.length ? (
-                  <div className="graph">
-                    <Graph events={visible} onSelect={setSelected} />
-                  </div>
+                  <Graph runId={run?.run_id ?? ''} events={visible} onSelect={setSelected} />
                 ) : (
                   <div className="empty-state">
                     <div className="empty-symbol">α</div>

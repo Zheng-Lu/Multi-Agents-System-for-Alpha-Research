@@ -61,3 +61,12 @@ continuation. After the required result exists, tools close for the summary invo
 and reused results are observable; model-call and step budgets bound repeated invalid behavior.
 Artifact logical keys include the assignment number so compaction and reused provider call IDs
 cannot collide across sequential assignments. No execution limit was raised to handle large batches.
+
+
+The execution graph projects nodes and edges from trace events in executionGraph.ts. Presentation
+positions are managed separately with React Flow node-change events. Browser storage keeps only
+coordinates under a versioned run-specific key; no transcripts or provider credentials are stored
+there. Run changes remount the view with that run's positions. Stream updates refresh execution data
+without replacing dragged coordinates. Initial/unmodified layouts fit new topology automatically;
+manual pan/zoom/drag disables automatic fitting until Auto arrange, Fit graph or an explicit view
+change. The graph cannot create, rewire or delete backend execution relationships.
