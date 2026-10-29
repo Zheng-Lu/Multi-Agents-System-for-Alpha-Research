@@ -3,8 +3,10 @@
 Prepared 2026-10-29. The native Responses adapter and role-level configuration already exist.
 The `gpt-6-luna` profile now includes dated Standard pricing. Live baseline validation succeeded
 on 2026-10-29: 7 model calls, 11 tool calls, an estimated $0.00212379, and a persisted report.
-See the [validation record](samples/openai-live-smoke.json). Pattern-specific live validation for
-Generator–Verifier and Orchestrator–Subagent is still pending.
+See the [baseline record](samples/openai-live-smoke.json). Generator–Verifier also passes a
+[live rejection/revision/acceptance test](samples/openai-generator-verifier-live.json) at the UI
+default output setting: 9 model calls, 4 tools, estimated $0.00163312. Orchestrator–Subagent has not
+been rerun as part of this fix.
 
 1. Open the repository's `.env` locally. It is ignored by Git. Set:
 
@@ -58,3 +60,24 @@ The first real run exposed an assignment scope mismatch; a subsequent run reache
 token allowance. The runtime now narrows factor schemas per assignment and compacts completed
 assignments into evidence-backed memory. Full outputs remain stored; provider continuation state
 stays intact within each active tool loop. No budget was increased for the successful validation.
+
+
+To smoke-test a specific architecture, add `--pattern generator_verifier` or
+`--pattern orchestrator_subagent`. For the validated Generator–Verifier configuration:
+
+```sh
+.venv/bin/python scripts/smoke_provider.py --allow-paid \
+  --provider openai --model gpt-6-luna --pattern generator_verifier \
+  --max-cost 0.02 --max-output-tokens 1500
+```
+
+Restart an already running backend after updating source files. Existing failed runs are immutable;
+open the latest completed run in Run history or start a new experiment. When inject_leak is enabled,
+the initial forward-return candidate is a deliberate control in both modes. The live generator
+chooses one subsequent candidate using verifier feedback; the deterministic gates independently
+check it. This is not an unrestricted factor sweep.
+
+Batches over eight requests now receive explicit per-call feedback for the excess. The runtime
+executes no more than eight eligible requests per response and reuses identical typed calls within
+an assignment. After the required tool succeeds, its phase closes and the next invocation produces
+a summary with no further tools. Call, token, step, time and estimated spending limits still apply.

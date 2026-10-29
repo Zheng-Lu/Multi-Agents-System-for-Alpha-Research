@@ -3,7 +3,7 @@
 import argparse
 import asyncio
 
-from alpha_mas.models import Budget, ModelAssignments, ModelConfig, ResearchRun, RunRequest
+from alpha_mas.models import Budget, ModelAssignments, ModelConfig, Pattern, ResearchRun, RunRequest
 from alpha_mas.providers.registry import ROOT, Registry
 from alpha_mas.runtime import Runtime
 from alpha_mas.security import redact
@@ -19,6 +19,7 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument("--model", required=True)
+    parser.add_argument("--pattern", choices=[p.value for p in Pattern], default="baseline")
     parser.add_argument("--max-cost", type=float, default=0.02)
     parser.add_argument("--max-output-tokens", type=int, default=1500)
     args = parser.parse_args()
@@ -29,6 +30,7 @@ if __name__ == "__main__":
     run = ResearchRun(
         request=RunRequest(
             mode="live",
+            pattern=Pattern(args.pattern),
             models=ModelAssignments(default=config),
             budget=Budget(max_cost_usd=args.max_cost, max_retries=0),
         )

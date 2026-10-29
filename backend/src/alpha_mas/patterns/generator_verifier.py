@@ -17,7 +17,15 @@ async def execute(runtime: Runtime) -> None:
         factor: Factor = (
             "future_leak" if attempt == 1 and runtime.run.request.inject_leak else "momentum"
         )
-        finding = await runtime.research(generator, factor, feedback)
+        # The configured fault is an explicit experimental control, including in Live Mode.
+        # On other attempts the live generator may select one factor from the fixed tool catalog.
+        inject_now = attempt == 1 and runtime.run.request.inject_leak
+        finding = await runtime.research(
+            generator,
+            factor,
+            feedback,
+            allow_factor_choice=runtime.run.request.mode == "live" and not inject_now,
+        )
         findings.append(finding)
         factor = finding.result.config.factor
         handoff = runtime.emit(

@@ -51,3 +51,13 @@ usage stops subsequent paid calls after a response; retries retain conservative 
 failed attempts. A single short lock protects allowance accounting, not research execution.
 
 Implementation decisions: [ADR 001](decisions/001-foundation.md). Scope: [status](status.md).
+
+
+Tool-loop bounds: each assignment has one required result (research backtest, independent check or
+lead decomposition). Duplicate requests use a cache keyed by normalized typed arguments and return
+the original artifact reference. Only the first eight requests of a response are eligible; excess
+requests receive correlated errors, not execution. Every call ID is answered for valid provider
+continuation. After the required result exists, tools close for the summary invocation. Rejections
+and reused results are observable; model-call and step budgets bound repeated invalid behavior.
+Artifact logical keys include the assignment number so compaction and reused provider call IDs
+cannot collide across sequential assignments. No execution limit was raised to handle large batches.

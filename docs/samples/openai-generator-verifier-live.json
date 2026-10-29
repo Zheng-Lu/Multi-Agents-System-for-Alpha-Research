@@ -1,0 +1,331 @@
+{
+  "validated_on": "2026-10-29",
+  "verification_scope": "Live Generator-Verifier; injected first candidate rejected; model-chosen revision accepted. No fan-out or execution budgets were increased.",
+  "run": {
+    "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+    "request": {
+      "task": {
+        "prompt": "Evaluate momentum, earnings and news signals for 5-day returns.",
+        "dataset_version": "synthetic-v1",
+        "target_days": 5
+      },
+      "pattern": "generator_verifier",
+      "mode": "live",
+      "models": {
+        "default": {
+          "provider": "openai",
+          "model": "gpt-6-luna",
+          "max_output_tokens": 1500,
+          "reasoning": "default",
+          "stream": false,
+          "response_schema": null
+        },
+        "roles": {},
+        "fallbacks": {},
+        "authorize_fallback_data_transfer": false
+      },
+      "budget": {
+        "max_cost_usd": 0.02,
+        "max_tokens_per_agent": 48000,
+        "max_calls_per_agent": 10,
+        "max_steps": 80,
+        "max_runtime_seconds": 120.0,
+        "max_retries": 0
+      },
+      "max_revisions": 2,
+      "inject_leak": true
+    },
+    "status": "completed",
+    "created_at": "2026-10-29T14:55:27.762060+00:00",
+    "finished_at": "2026-10-29T14:56:05.582348+00:00",
+    "error": null,
+    "metrics": {
+      "model_calls": 9,
+      "tool_calls": 4,
+      "input_tokens": 12892,
+      "output_tokens": 978,
+      "estimated_cost_usd": 0.00163312,
+      "cost_complete": true,
+      "latency_ms": 37815.20680700487,
+      "retries": 0,
+      "rate_limit_events": 0,
+      "coordination_events": 5
+    }
+  },
+  "invocations": [
+    {
+      "invocation_id": "1bc0c31c-18ed-4c54-92ed-bc33ac4806b0",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "c5d1f3b7-67c4-4857-af54-6da02885df7b",
+      "agent_id": "generator",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 676,
+        "output_tokens": 27,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "estimated_cost_usd": 8.11e-05,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 9015.451280996785,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "2231b87b-4f71-466e-9b9d-08764c066ad1",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "c5d1f3b7-67c4-4857-af54-6da02885df7b",
+      "agent_id": "generator",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 599,
+        "output_tokens": 98,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "estimated_cost_usd": 0.0001089,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 3225.592169997981,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "5e459899-125b-4be0-9730-26be20cf52d6",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "1c396ce6-661c-48b7-9e30-461e4475d901",
+      "agent_id": "verifier",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 1549,
+        "output_tokens": 23,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "estimated_cost_usd": 0.0001664,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 2215.125012997305,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "c410cfbf-4d45-4b30-980f-04a6ca32f91e",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "1c396ce6-661c-48b7-9e30-461e4475d901",
+      "agent_id": "verifier",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 1615,
+        "output_tokens": 58,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "estimated_cost_usd": 0.0001905,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 2079.588063999836,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "1158d654-2661-4bfa-9db7-0f5b4c391cf2",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "c5d1f3b7-67c4-4857-af54-6da02885df7b",
+      "agent_id": "generator",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 890,
+        "output_tokens": 63,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 35
+      },
+      "estimated_cost_usd": 0.0001205,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 2184.6843979947153,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "109e8f3b-94ab-4852-9770-b19a4703ca4c",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "c5d1f3b7-67c4-4857-af54-6da02885df7b",
+      "agent_id": "generator",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 840,
+        "output_tokens": 169,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 52
+      },
+      "estimated_cost_usd": 0.0001685,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 5584.291890001623,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "e83f0802-92b4-40c2-b57b-8753f381250c",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "1c396ce6-661c-48b7-9e30-461e4475d901",
+      "agent_id": "verifier",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 3165,
+        "output_tokens": 22,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "estimated_cost_usd": 0.0003275,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 4786.229892997653,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "01012d8c-8674-4786-a563-7d8116b7e702",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "1c396ce6-661c-48b7-9e30-461e4475d901",
+      "agent_id": "verifier",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 3220,
+        "output_tokens": 56,
+        "cached_input_tokens": 1612,
+        "reasoning_tokens": 0
+      },
+      "estimated_cost_usd": 0.00020491999999999998,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 1894.1652270004852,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "bbdcb636-0f97-45a2-b3cd-ead2717c4030",
+      "run_id": "66552c5c-8284-41e2-92ad-047113907bed",
+      "task_id": "cecf7d75-9749-40a4-8f77-ba3c5294c513",
+      "agent_id": "lead",
+      "pattern": "generator_verifier",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 338,
+        "output_tokens": 462,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 402
+      },
+      "estimated_cost_usd": 0.0002648,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 6119.3633590009995,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    }
+  ],
+  "report_artifact_id": "256514c7-2e42-4800-a2e0-37318d0770c7",
+  "verifications": [
+    {
+      "verdict": "rejected",
+      "checks": {
+        "available_before_decision": false,
+        "forward_target_not_in_features": false
+      },
+      "feedback": [
+        "Remove forward returns from features; use past-close momentum."
+      ],
+      "attempt": 1
+    },
+    {
+      "verdict": "accepted",
+      "checks": {
+        "available_before_decision": true,
+        "forward_target_not_in_features": true
+      },
+      "feedback": [],
+      "attempt": 2
+    }
+  ],
+  "computed_candidates": [
+    {
+      "factor": "future_leak",
+      "test_ic": 1.0,
+      "net_return": 3.3686036958962937,
+      "evidence": [
+        {
+          "artifact_id": "ec89b9f1-80c5-4b7e-8570-19ac6a983573",
+          "dataset_version": "synthetic-v1",
+          "description": "Computed backtest"
+        }
+      ]
+    },
+    {
+      "factor": "momentum",
+      "test_ic": 0.09166666666666667,
+      "net_return": 0.039164163659636264,
+      "evidence": [
+        {
+          "artifact_id": "a0c4584f-13a7-4dac-8b94-7047475cc221",
+          "dataset_version": "synthetic-v1",
+          "description": "Computed backtest"
+        }
+      ]
+    }
+  ]
+}

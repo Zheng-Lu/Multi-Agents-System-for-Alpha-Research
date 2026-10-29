@@ -31,3 +31,11 @@ Automated tests cover:
 Persistent worker recovery, cross-agent shared-state discovery/conflicts, Redis consumer groups,
 commit-before-ack fault injection, real-provider smoke and automated live comparison are pending.
 The SQLite deduplication test is useful infrastructure coverage, not proof of complete worker recovery.
+
+
+Burst regressions additionally check every native OpenAI call ID receives a corresponding result,
+that excess requests do not execute, identical normalized arguments reuse evidence, distinct
+sequential assignments do not collide after compaction, and one-candidate revision semantics survive
+large responses. Tool-call metrics count actual tool executions; reuse/rejection events remain
+available in the trace. Browser checks start an isolated Demo Mode server on port 8137 by default
+(override with ALPHA_E2E_PORT) and never reuse the user's running lab server.

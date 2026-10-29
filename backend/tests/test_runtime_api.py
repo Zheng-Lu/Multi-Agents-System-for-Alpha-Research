@@ -38,6 +38,13 @@ async def test_all_demo_patterns_complete_and_trace_causality(store, registry, p
     artifacts = store.artifacts(run.run_id)
     report = next(a["payload"] for a in artifacts if a["kind"] == "report")
     assert report["synthetic"] and report["findings"]
+    if pattern != Pattern.GENERATOR_VERIFIER:
+        assert {f["result"]["config"]["factor"] for f in report["findings"]} == {
+            "momentum",
+            "earnings",
+            "sentiment",
+        }
+        assert len({f["evidence"][0]["artifact_id"] for f in report["findings"]}) == 3
     assert "future_leak" not in report["ranked_candidates"]
     assert run.metrics.model_calls > 0 and run.metrics.tool_calls > 0
     assert run.metrics.estimated_cost_usd == 0
@@ -322,7 +329,7 @@ async def test_live_baseline_conveys_each_assignment_in_prompt_and_schema(store,
                 factor = instruction["factor"]
                 self.assignments.append(factor)
                 assert f"only factor '{factor}'" in instruction["assignment_constraints"]
-                for tool in tools:
+                for tool in tools or []:
                     if tool.name in {"run_backtest", "check_data_leakage"}:
                         assert tool.parameters["properties"]["factor"]["enum"] == [factor]
             return await super().generate(messages, tools, config)
@@ -395,3 +402,186 @@ async def test_completed_assignment_compaction_keeps_evidence_and_same_context(s
     assert len(session.messages) == 2
     assert len([a for a in store.artifacts(run.run_id) if a["kind"] == "tool_result"]) == 2
     assert sum(e["event_type"] == "context.compacted" for e in store.events(run.run_id)) == 2
+
+
+async def test_generator_burst_reuses_duplicates_rejects_excess_and_revises(store, registry):
+    from alpha_mas.models import ModelResponse, ModelUsage, ToolCall
+
+    class Burst(MockProvider):
+        burst_ids = []
+        continuation_checked = False
+
+        async def generate(self, messages, tools, config):
+            index = max(i for i, m in enumerate(messages) if m.role == "user")
+            instruction = json.loads(messages[index].content)
+            outputs = messages[index + 1 :]
+            if instruction["phase"] == "research" and instruction["factor"] == "future_leak":
+                if not outputs:
+                    calls = [
+                        ToolCall(
+                            id="first", name="run_backtest", arguments={"factor": "future_leak"}
+                        ),
+                        ToolCall(id="other", name="run_backtest", arguments={"factor": "momentum"}),
+                        ToolCall(
+                            id="same",
+                            name="run_backtest",
+                            arguments={"factor": "future_leak", "cost_bps": 10},
+                        ),
+                        *[
+                            ToolCall(
+                                id=f"p{i}", name="get_price_data", arguments={"symbol": f"SYN0{i}"}
+                            )
+                            for i in range(1, 8)
+                        ],
+                    ]
+                    self.burst_ids = [c.id for c in calls]
+                    return ModelResponse(
+                        model=config.model,
+                        finish_reason="tool_calls",
+                        tool_calls=calls,
+                        usage=ModelUsage(input_tokens=10, output_tokens=10),
+                    )
+                replies = [m for m in outputs if m.role == "tool"]
+                assert [m.tool_call_id for m in replies] == self.burst_ids
+                assert json.loads(replies[1].content)["error"] == "assignment_already_completed"
+                assert json.loads(replies[-1].content)["error"] == "fan_out_limit"
+                assert (
+                    json.loads(replies[0].content)["artifact_id"]
+                    == json.loads(replies[2].content)["artifact_id"]
+                )
+                assert tools is None
+                self.continuation_checked = True
+            return await super().generate(messages, tools, config)
+
+    provider = Burst()
+    registry.overrides["mock"] = provider
+    run = ResearchRun(request=RunRequest(pattern=Pattern.GENERATOR_VERIFIER))
+    await Runtime(run, store, registry).execute()
+    assert run.status == "completed", run.error
+    assert provider.continuation_checked
+    events = store.events(run.run_id)
+    assert sum(e["event_type"] == "tool.reused" for e in events) == 1
+    assert any(e["event_type"] == "tool.batch_limited" for e in events)
+    findings = [a["payload"] for a in store.artifacts(run.run_id) if a["kind"] == "finding"]
+    assert [f["hypothesis"]["factor"] for f in findings] == ["future_leak", "momentum"]
+    assert [e["event_type"] for e in events if e["event_type"].startswith("verification.")] == [
+        "verification.rejected",
+        "verification.accepted",
+    ]
+
+
+async def test_openai_burst_preserves_all_native_call_ids_without_duplicate_artifacts(
+    store, registry
+):
+    from alpha_mas.providers.http import OpenAIProvider
+
+    continuations = 0
+
+    def handle(request):
+        nonlocal continuations
+        payload = json.loads(request.content)
+        last = payload["input"][-1]
+        if last.get("type") == "function_call_output":
+            continuations += 1
+            replies = [i for i in payload["input"] if i.get("type") == "function_call_output"]
+            calls = [i for i in payload["input"] if i.get("type") == "function_call"]
+            assert [i["call_id"] for i in calls] == [i["call_id"] for i in replies]
+            assert len(replies) == 10
+            assert json.loads(replies[-1]["output"])["error"] == "fan_out_limit"
+            assert "tools" not in payload
+            output = [
+                {
+                    "type": "message",
+                    "content": [{"type": "output_text", "text": "Computed summary"}],
+                }
+            ]
+        elif json.loads(last["content"])["phase"] == "research":
+            factor = json.loads(last["content"])["factor"]
+            output = [
+                {
+                    "type": "function_call",
+                    "call_id": f"call{i}",
+                    "name": "run_backtest",
+                    "arguments": json.dumps({"factor": factor}),
+                }
+                for i in range(10)
+            ]
+        else:
+            output = [
+                {"type": "message", "content": [{"type": "output_text", "text": "Final report"}]}
+            ]
+        return httpx.Response(
+            200,
+            json={
+                "output": output,
+                "model": "gpt-6-luna",
+                "status": "completed",
+                "usage": {"input_tokens": 100, "output_tokens": 100},
+            },
+        )
+
+    registry.overrides["openai"] = OpenAIProvider(
+        "openai", "https://example.test/v1", "fake-key", httpx.MockTransport(handle)
+    )
+    run = ResearchRun(
+        request=RunRequest(
+            mode="live",
+            models=ModelAssignments(default=ModelConfig(provider="openai", model="gpt-6-luna")),
+        )
+    )
+    await Runtime(run, store, registry).execute()
+    assert run.status == "completed", run.error
+    assert continuations == 3 and run.metrics.tool_calls == 3
+    assert run.metrics.model_calls == 7
+    assert sum(a["kind"] == "tool_result" for a in store.artifacts(run.run_id)) == 3
+
+
+async def test_unique_tool_burst_never_executes_more_than_eight_per_response(store, registry):
+    from alpha_mas.models import ModelResponse, ModelUsage, ToolCall
+    from alpha_mas.runtime import Session
+
+    class DataBurst:
+        async def generate(self, messages, tools, config):
+            replies = [m for m in messages if m.role == "tool"]
+            if not replies:
+                calls = [
+                    ToolCall(
+                        id=f"price{i}", name="get_price_data", arguments={"symbol": f"SYN0{i}"}
+                    )
+                    for i in range(1, 9)
+                ]
+                calls.append(ToolCall(id="news", name="get_news_events", arguments={}))
+            elif len(replies) == 9:
+                assert json.loads(replies[-1].content)["error"] == "fan_out_limit"
+                assert tools  # Required backtest has not run, so it remains available.
+                calls = [
+                    ToolCall(id="backtest", name="run_backtest", arguments={"factor": "momentum"})
+                ]
+            else:
+                assert tools is None
+                calls = []
+            return ModelResponse(
+                model=config.model,
+                text="Summary" if not calls else "",
+                tool_calls=calls,
+                finish_reason="stop",
+                usage=ModelUsage(input_tokens=10, output_tokens=10),
+            )
+
+    registry.overrides["mock"] = DataBurst()
+    run = ResearchRun(request=RunRequest())
+    runtime = Runtime(run, store, registry)
+    session = Session(runtime, "lead", "Momentum only")
+    _, results = await session.ask(
+        {"phase": "research", "factor": "momentum"},
+        ["get_price_data", "get_news_events", "run_backtest"],
+    )
+    assert len(results) == 9  # Eight data reads, then the backtest in a separate response.
+    executions = 0
+    for event in store.events(run.run_id):
+        if event["event_type"] == "model.started":
+            executions = 0
+        elif event["event_type"] == "tool.completed":
+            executions += 1
+            assert executions <= 8
+    assert not any(r["tool"] == "get_news_events" for r in results)

@@ -1,6 +1,6 @@
 # Delivery status and continuation
 
-Latest update (2026-10-29): **OpenAI baseline now passes a genuine live smoke test.**
+Latest update (2026-10-29): **OpenAI baseline and Generator–Verifier pass live smoke tests.**
 See the final progress entry and [measured result](samples/openai-live-smoke.json). Earlier entries
 below preserve the state at their original delivery dates.
 
@@ -96,3 +96,32 @@ the user prioritizes OpenAI.
 Final checks for this fix: 43 backend tests, Ruff lint/format, mypy, React interaction test, ESLint,
 TypeScript/Vite production build, both Chromium end-to-end flows, and six credential-free evaluation
 runs all pass. The browser flows use Demo Mode and did not trigger paid inference.
+
+
+## 2026-10-29 — Generator–Verifier fan-out fixed and live validated
+
+User runs failed at the first generator response with "Model exceeded maximum tool fan-out (8)".
+The runtime now asks for one candidate, executes one required result, caches duplicates by normalized
+arguments, returns explicit correlated feedback for excess requests, and closes tools before the
+summary. Eight remains the per-response eligibility cap; all original execution/spending limits
+remain enforced. Fault injection scopes the first candidate to future_leak in Live Mode as well as
+Demo Mode; later live revisions can select one candidate from the fixed catalog.
+
+A regression also exposed artifact-key reuse after compaction when provider call IDs repeat. Keys
+now include the sequential assignment number, preserving distinct evidence across research families.
+
+Genuine OpenAI run 66552c5c-8284-41e2-92ad-047113907bed completed: rejected future_leak, returned
+feedback, backtested a model-selected momentum revision, independently checked and accepted it, and
+published report 256514c7-2e42-4800-a2e0-37318d0770c7. Nine model calls, four actual tool calls,
+12,892 input tokens, 978 output tokens, 37.82 seconds, estimated $0.00163312. Output cap 1,500 matches
+the UI default; validation cost allowance $0.02; token/call/step/runtime limits unchanged; retries 0.
+See docs/samples/openai-generator-verifier-live.json. No other live runs were initiated for this fix.
+
+CLI smoke tests now accept --pattern. Native mock regressions exercise responses with ten tool calls
+and ensure all call IDs are answered without duplicate committed outcomes. Browser tests use their
+own server/database on port 8137 rather than reusing the user's running lab. Existing failed runs
+are retained; restart the backend before starting a fresh run with updated code.
+
+Final checks for the fan-out fix: 46 backend tests, Ruff lint/format, mypy, React interaction test,
+ESLint, TypeScript/Vite build, both isolated Chromium flows and six Demo Mode evaluation runs pass.
+The user's untracked .vscode directory was preserved untouched. Nothing was pushed or deployed.

@@ -15,6 +15,7 @@ from alpha_mas.models import (
     ResearchHypothesis,
     ResearchRun,
     RunMetrics,
+    ToolCall,
     VerificationResult,
     now,
 )
@@ -42,6 +43,7 @@ class Session:
             )
         ]
         self.retained_findings: list[dict] = []
+        self.assignment_number = 0
         self.parent = runtime.emit(
             "agent.started",
             task=self.task,
@@ -56,11 +58,11 @@ class Session:
 
     async def ask(self, instruction: dict, allowed: list[str]) -> tuple[str, list[dict]]:
         rt = self.runtime
+        self.assignment_number += 1
+        assignment_id = f"{self.task.agent.context_id}:{self.assignment_number}"
         scoped_factor = None
         generator_choice = (
-            self.task.agent.role == "generator"
-            and rt.run.request.mode == "live"
-            and instruction.get("phase") == "research"
+            instruction.get("allow_factor_choice", False) and instruction.get("phase") == "research"
         )
         if instruction.get("phase") in {"research", "verify"} and not generator_choice:
             scoped_factor = instruction["factor"]
@@ -73,9 +75,30 @@ class Session:
                     "return its summary and wait for the next assignment."
                 ),
             }
+        required_tool = {
+            "research": "run_backtest",
+            "verify": "check_data_leakage",
+            "plan": "delegate_research",
+        }.get(str(instruction.get("phase", "")))
+        instruction = {
+            **instruction,
+            "required_tool": required_tool,
+            "tool_policy": (
+                "Produce exactly one candidate or assignment result. Call its required tool once. "
+                "No factor sweeps or repeated calls. Request at most 8 calls per response. "
+                "After tool success, summarize; the coordinator owns next steps."
+            ),
+        }
+        if instruction.get("phase") == "research":
+            instruction["research_context"] = (
+                "run_backtest already computes one fixed factor from the versioned dataset. "
+                "Additional data retrieval is optional, not a required checklist."
+            )
         definitions = rt.tools.definitions(allowed, factor=scoped_factor)
         self.messages.append(Message(role="user", content=json.dumps(instruction)))
         results: list[dict] = []
+        cache: dict[tuple[str, str], dict] = {}
+        required_done = False
         while True:
             response = await rt.router.invoke(self.task, self.messages, definitions)
             rt.check_cancelled()
@@ -84,19 +107,64 @@ class Session:
                 if response.finish_reason in {"length", "max_tokens", "incomplete"}:
                     raise ValueError("Model output truncated; increase output limit within budget")
                 return response.text, results
+            if not definitions:
+                raise ValueError("Model requested tools after the assignment's tool phase closed")
             if len(response.tool_calls) > 8:
-                raise ValueError("Model exceeded maximum tool fan-out (8)")
-            for call in response.tool_calls:
+                rt.emit(
+                    "tool.batch_limited",
+                    task=self.task,
+                    parent=self.parent,
+                    metadata={
+                        "requested": len(response.tool_calls),
+                        "maximum": 8,
+                        "policy": "Only the first 8 calls are eligible; excess calls get errors.",
+                    },
+                )
+            for index, call in enumerate(response.tool_calls):
                 rt.check_cancelled()
                 rt.router.step()
                 if call.name not in allowed:
                     raise ValueError("Model requested a tool outside this agent's permissions")
+                if index >= 8:
+                    self.reject_tool(
+                        call, "fan_out_limit", "At most 8 calls per response are eligible."
+                    )
+                    continue
+                arguments = (
+                    rt.tools.schemas[call.name][0].model_validate(call.arguments).model_dump()
+                )
+                cache_key = (call.name, json.dumps(arguments, sort_keys=True))
+                if cache_key in cache:
+                    reused = cache[cache_key]
+                    rt.emit(
+                        "tool.reused",
+                        task=self.task,
+                        parent=self.parent,
+                        output_ref=reused["artifact_id"],
+                        metadata={"tool": call.name},
+                    )
+                    self.reply_tool(call, reused)
+                    continue
+                if required_done and call.name == required_tool:
+                    self.reject_tool(
+                        call,
+                        "assignment_already_completed",
+                        "One candidate/result per assignment. Summarize the existing result.",
+                    )
+                    continue
                 # Scope is enforced independently of model compliance.
                 if (
                     scoped_factor is not None
                     and call.name in {"run_backtest", "check_data_leakage"}
                     and call.arguments.get("factor") != scoped_factor
                 ):
+                    if generator_choice and required_done:
+                        self.reject_tool(
+                            call,
+                            "candidate_scope",
+                            "Only the selected candidate may be checked in this revision.",
+                        )
+                        continue
                     rt.emit(
                         "tool.rejected",
                         task=self.task,
@@ -124,7 +192,7 @@ class Session:
                 artifact = rt.artifact(
                     self.task.agent.agent_id,
                     "tool_result",
-                    f"{self.task.agent.context_id}:{len(self.messages)}:{call.id}",
+                    f"{assignment_id}:{len(self.messages)}:{call.id}",
                     {"tool": call.name, "arguments": call.arguments, "result": output},
                 )
                 rt.emit(
@@ -134,20 +202,52 @@ class Session:
                     output_ref=artifact.artifact_id,
                     metadata={"tool": call.name},
                 )
-                results.append(
-                    {"tool": call.name, "result": output, "artifact_id": artifact.artifact_id}
+                result = {"tool": call.name, "result": output, "artifact_id": artifact.artifact_id}
+                results.append(result)
+                cache[cache_key] = result
+                if call.name == required_tool:
+                    required_done = True
+                    if generator_choice:
+                        scoped_factor = arguments["factor"]
+                self.reply_tool(call, result)
+            if required_done:
+                definitions = []
+                rt.emit(
+                    "tool.phase_closed",
+                    task=self.task,
+                    parent=self.parent,
+                    metadata={
+                        "required_tool": required_tool,
+                        "reason": "Required result computed; summarize next.",
+                    },
                 )
-                # Keep transcripts compact; the durable artifact has the full return series.
-                compact = {k: v for k, v in output.items() if k != "period_returns"}
-                self.messages.append(
-                    Message(
-                        role="tool",
-                        tool_call_id=call.id,
-                        content=json.dumps(
-                            {"artifact_id": artifact.artifact_id, "result": compact}
-                        ),
-                    )
-                )
+
+    def reply_tool(self, call: ToolCall, result: dict) -> None:
+        compact = {k: v for k, v in result["result"].items() if k != "period_returns"}
+        self.messages.append(
+            Message(
+                role="tool",
+                tool_call_id=call.id,
+                content=json.dumps({"artifact_id": result["artifact_id"], "result": compact}),
+            )
+        )
+
+    def reject_tool(self, call: ToolCall, reason: str, feedback: str) -> None:
+        self.runtime.emit(
+            "tool.rejected",
+            task=self.task,
+            parent=self.parent,
+            status="rejected",
+            metadata={"tool": call.name, "reason": reason, "feedback": feedback},
+        )
+        # Every provider call ID gets a correlated response, including calls we do not execute.
+        self.messages.append(
+            Message(
+                role="tool",
+                tool_call_id=call.id,
+                content=json.dumps({"error": reason, "feedback": feedback}),
+            )
+        )
 
     def retain_finding(self, finding: ResearchFinding) -> None:
         """Compact only completed tool loops, retaining evidence rather than opaque transcripts."""
@@ -256,7 +356,12 @@ class Runtime:
         )
 
     async def research(
-        self, session: Session, factor: str, feedback: list[str] | None = None
+        self,
+        session: Session,
+        factor: str,
+        feedback: list[str] | None = None,
+        *,
+        allow_factor_choice: bool = False,
     ) -> ResearchFinding:
         summary, results = await session.ask(
             {
@@ -264,6 +369,7 @@ class Runtime:
                 "factor": factor,
                 "request": self.run.request.task.prompt,
                 "feedback": feedback or [],
+                "allow_factor_choice": allow_factor_choice,
             },
             [
                 "run_backtest",

@@ -175,7 +175,7 @@ class EvidenceReference(Contract):
 
 class BacktestConfig(Contract):
     factor: Literal["momentum", "earnings", "sentiment", "combined", "random", "future_leak"]
-    cost_bps: float = Field(default=10, ge=0, le=1000)
+    cost_bps: float = Field(default=10.0, ge=0, le=1000)
     split_fraction: float = Field(default=0.65, ge=0.4, le=0.8)
     horizon_days: Literal[5] = 5
 
