@@ -37,6 +37,18 @@ it('starts a credential-free run with explicit model configuration', async () =>
                 notes: 'Simulated',
                 pricing: null,
               },
+              {
+                provider: 'openai',
+                model: 'gpt-6-luna',
+                smoke_tested: false,
+                capabilities: { tool_calling: true },
+                notes: 'Live smoke pending',
+                pricing: {
+                  input_per_million: 0.1,
+                  output_per_million: 0.5,
+                  effective_date: '2026-10-29',
+                },
+              },
             ]
           : init?.method === 'POST'
             ? {
@@ -63,6 +75,13 @@ it('starts a credential-free run with explicit model configuration', async () =>
   render(<App />);
   await screen.findByRole('option', { name: 'Generator–Verifier' });
   expect(screen.getByText(/Model decisions are simulated/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Model assignments/ }));
+  fireEvent.change(screen.getByLabelText('Model preset'), { target: { value: 'openai' } });
+  expect(screen.getByLabelText('Execution mode')).toHaveValue('live');
+  expect(screen.getByLabelText('Global model')).toHaveValue('openai/gpt-6-luna');
+  expect(screen.getByLabelText('verifier model')).toHaveValue('openai/gpt-6-luna');
+  fireEvent.change(screen.getByLabelText('Model preset'), { target: { value: 'demo' } });
+  expect(screen.getByLabelText('Execution mode')).toHaveValue('demo');
   fireEvent.click(screen.getByRole('button', { name: /Run experiment/ }));
   await waitFor(() => expect(calls.some((c) => c.url === '/api/runs' && c.body)).toBe(true));
   const request = JSON.parse(calls.find((c) => c.url === '/api/runs' && c.body)!.body!);

@@ -163,6 +163,12 @@ class ModelRouter:
                             * (pricing.input_per_million - pricing.cached_input_per_million)
                             / 1e6
                         )
+                    if (
+                        response
+                        and config.provider == "openai"
+                        and response.private_state.get("service_tier") not in {None, "default"}
+                    ):
+                        complete = False
                     if response and response.private_state.get("cache_write_tokens"):
                         complete = False
                 if response:

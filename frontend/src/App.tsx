@@ -192,7 +192,7 @@ export default function App() {
           }),
         ),
       });
-    if (name === 'benchmark') {
+    if (name === 'benchmark' || name === 'openai') {
       const m = models.find((m) => m.provider === 'openai') ?? mock;
       setAssignments({ default: { provider: m.provider, model: m.model }, roles: {} });
     }
@@ -330,6 +330,7 @@ export default function App() {
                   </option>
                   <option value="demo">Credential-free demo</option>
                   <option value="economical">Economical candidate · GLM</option>
+                  <option value="openai">OpenAI · Standard pricing</option>
                   <option value="mixed">Mixed-provider candidate</option>
                   <option value="benchmark">High-capability candidate</option>
                 </select>

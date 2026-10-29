@@ -101,10 +101,10 @@
   {
     "provider": "openai",
     "model": "gpt-6-luna",
-    "documentation": "https://developers.openai.com/api/docs/guides/function-calling",
-    "verified_on": "2026-10-28",
+    "documentation": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    "verified_on": "2026-10-29",
     "smoke_tested": false,
-    "notes": "Native Responses API. Pricing depends on service tier; configure explicitly.",
+    "notes": "Native Responses API; explicit Standard tier, global endpoint, short context. Live smoke pending.",
     "capabilities": {
       "tool_calling": true,
       "parallel_tool_calls": null,
@@ -113,7 +113,14 @@
       "reasoning_mode": false,
       "max_output_tokens": 8192
     },
-    "pricing": null
+    "pricing": {
+      "currency": "USD",
+      "effective_date": "2026-10-29",
+      "input_per_million": 0.1,
+      "output_per_million": 0.5,
+      "cached_input_per_million": 0.01,
+      "source": "https://developers.openai.com/api/docs/models/gpt-6-luna"
+    }
   },
   {
     "provider": "anthropic",

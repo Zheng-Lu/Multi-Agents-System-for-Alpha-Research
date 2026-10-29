@@ -282,3 +282,30 @@ async def test_unknown_provider_usage_stops_next_paid_call(store, registry):
     assert run.status == "budget_exceeded" and provider.calls == 1
     assert "unknown" in run.error
     assert run.metrics.estimated_cost_usd is None and not run.metrics.cost_complete
+
+
+async def test_openai_unexpected_service_tier_stops_further_calls(store, registry):
+    from alpha_mas.models import ModelResponse, ModelUsage, ToolCall
+
+    class DifferentTier:
+        calls = 0
+
+        async def generate(self, *args):
+            self.calls += 1
+            return ModelResponse(
+                model="gpt-6-luna",
+                finish_reason="completed",
+                usage=ModelUsage(input_tokens=100, output_tokens=50),
+                private_state={"service_tier": "priority"},
+                tool_calls=[
+                    ToolCall(id="a", name="run_backtest", arguments={"factor": "momentum"})
+                ],
+            )
+
+    config = ModelConfig(provider="openai", model="gpt-6-luna")
+    provider = DifferentTier()
+    registry.overrides["openai"] = provider
+    run = ResearchRun(request=RunRequest(mode="live", models=ModelAssignments(default=config)))
+    await Runtime(run, store, registry).execute()
+    assert run.status == "budget_exceeded" and provider.calls == 1
+    assert not run.metrics.cost_complete and run.metrics.estimated_cost_usd is None

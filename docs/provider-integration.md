@@ -44,7 +44,8 @@ supported. Add models by editing `config/models.json`. Add providers by register
 server-side credential profile in `providers/registry.py`; no coordination module needs changes.
 
 Pricing: GLM reference rates are USD $0.60 input / $2.20 output / $0.11 cached input per million,
-from the linked pricing page on the snapshot date. Other fetched tables were missing recoverable
+from the linked pricing page on the snapshot date. OpenAI Standard short-context pricing was added on 2026-10-29; see the
+[OpenAI quickstart](openai-quickstart.md). Other fetched tables were missing recoverable
 rates or required region/tier assumptions, so their entries remain null. Fill a ModelPricing object
 with currency, effective date, rates and source before live execution. Unknown is not zero.
 Anthropic cache creation remains incomplete rather than receiving an unvalidated tariff estimate.

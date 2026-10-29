@@ -46,3 +46,18 @@ Precise continuation:
 Known limits: local single-user app; no authentication, deployment, automatic paid-call resume,
 provider token streaming, fully general leakage detection or real market data ingestion. The current
 SQLite artifact retry test validates unique committed outcomes, not the full requested crash/ack fault.
+
+
+## 2026-10-29 — OpenAI setup
+
+User selected OpenAI for the next live experiment. Added a dated priced gpt-6-luna Standard profile,
+explicit Standard-tier requests, a dedicated UI preset and docs/openai-quickstart.md. Created an
+ignored local .env template with live inference still disabled until credentials are entered.
+No OpenAI key was available, so no real inference or paid smoke test ran. Model smoke_tested remains
+false. The next live acceptance step is now the OpenAI smoke command in that quickstart; GLM remains
+available for a later Chinese-provider acceptance check. Persistent collaboration work remains pending.
+
+Checks for the OpenAI setup increment: 39 backend tests pass, including priced-profile preflight
+and stopping on an unexpected served tier; the React interaction test checks OpenAI preset selection
+and restoring Demo Mode. Ruff, mypy, ESLint and the TypeScript/Vite build pass. Browser tests were
+not rerun for this increment; the previous four-browser-check result above is historical.

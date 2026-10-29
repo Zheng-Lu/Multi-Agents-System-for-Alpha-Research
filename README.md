@@ -55,9 +55,13 @@ export PATH="$PWD/.venv/bin:$PWD/.tools/node-v22.16.0-darwin-x64/bin:$PATH"
 
 ## Live inference (opt-in)
 
+For OpenAI, follow the [OpenAI quickstart](docs/openai-quickstart.md). A priced Standard profile
+and a dedicated UI preset are available; a real API key and live smoke validation are still needed.
+
+
 Copy `.env.example` to `.env`. Put keys on the backend only. Set `ALPHA_ALLOW_LIVE=true`
 only when ready for bounded paid calls, then select Live Mode and a documented model in the UI.
-GLM's profile includes dated reference pricing. Other profiles need explicit current prices in
+GLM and OpenAI profiles include dated reference pricing. Other profiles need explicit current prices in
 `config/models.json`; missing prices block live execution rather than treating cost as zero.
 Qwen requires a region/workspace URL matching its key. Presets are **candidates**, not verified
 performance recommendations. Unverified live status is visible in every model selector.

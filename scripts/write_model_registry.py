@@ -4,12 +4,22 @@ import json
 from pathlib import Path
 
 
-def entry(provider, model, doc, *, price=None, reasoning=False, structured=False, notes=""):
+def entry(
+    provider,
+    model,
+    doc,
+    *,
+    price=None,
+    reasoning=False,
+    structured=False,
+    notes="",
+    verified_on="2026-10-28",
+):
     return dict(
         provider=provider,
         model=model,
         documentation=doc,
-        verified_on="2026-10-28",
+        verified_on=verified_on,
         smoke_tested=provider == "mock",
         notes=notes or "Documentation checked; live smoke pending.",
         capabilities=dict(
@@ -24,10 +34,10 @@ def entry(provider, model, doc, *, price=None, reasoning=False, structured=False
     )
 
 
-def price(inp, out, cached, source):
+def price(inp, out, cached, source, effective_date="2026-10-28"):
     return dict(
         currency="USD",
-        effective_date="2026-10-28",
+        effective_date=effective_date,
         input_per_million=inp,
         output_per_million=out,
         cached_input_per_million=cached,
@@ -74,8 +84,17 @@ entries = [
     entry(
         "openai",
         "gpt-6-luna",
-        "https://developers.openai.com/api/docs/guides/function-calling",
-        notes="Native Responses API. Pricing depends on service tier; configure explicitly.",
+        "https://developers.openai.com/api/docs/models/gpt-6-luna",
+        price=price(
+            0.1,
+            0.5,
+            0.01,
+            "https://developers.openai.com/api/docs/models/gpt-6-luna",
+            effective_date="2026-10-29",
+        ),
+        verified_on="2026-10-29",
+        notes="Native Responses API; explicit Standard tier, global endpoint, short context. "
+        "Live smoke pending.",
     ),
     entry(
         "anthropic",

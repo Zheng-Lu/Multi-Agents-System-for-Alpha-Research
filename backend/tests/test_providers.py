@@ -104,6 +104,7 @@ async def test_openai_native_responses_preserves_output_items():
         payload = json.loads(request.content)
         requests.append(payload)
         assert payload["store"] is False
+        assert payload["service_tier"] == "default"
         if len(requests) == 2:
             assert payload["input"][1:3] == output
             assert payload["input"][-1]["call_id"] == "call"
@@ -240,3 +241,19 @@ def test_capabilities_and_unregistered_models(registry):
         registry.validate(ModelConfig(provider="glm", model="invented"))
     with pytest.raises(ValueError, match="Reasoning override"):
         registry.validate(ModelConfig(reasoning="enabled"))
+
+
+def test_openai_priced_profile_can_pass_live_preflight(store, registry, monkeypatch):
+    from alpha_mas.models import ModelAssignments, ResearchRun, RunRequest
+    from alpha_mas.runtime import Runtime
+
+    config = ModelConfig(provider="openai", model="gpt-6-luna")
+    entry = registry.entry(config)
+    assert entry.pricing.effective_date == "2026-10-29"
+    assert entry.pricing.input_per_million == 0.1
+    assert entry.pricing.output_per_million == 0.5
+    assert not entry.smoke_tested
+    monkeypatch.setenv("OPENAI_API_KEY", "local-test-key")
+    run = ResearchRun(request=RunRequest(mode="live", models=ModelAssignments(default=config)))
+    Runtime(run, store, registry).router.preflight()
+    assert store.invocations(run.run_id) == []

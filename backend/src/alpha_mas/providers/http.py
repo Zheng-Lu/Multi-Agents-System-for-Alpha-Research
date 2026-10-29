@@ -161,6 +161,7 @@ class OpenAIProvider(HTTPProvider):
             "input": items,
             "store": False,
             "include": ["reasoning.encrypted_content"],
+            "service_tier": "default",
             "max_output_tokens": config.max_output_tokens,
         }
         if tools:
@@ -209,7 +210,7 @@ class OpenAIProvider(HTTPProvider):
                         "reasoning_tokens"
                     ),
                 ),
-                private_state={"response_output": output},
+                private_state={"response_output": output, "service_tier": data.get("service_tier")},
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ProviderError("invalid_response") from exc
