@@ -79,3 +79,14 @@ async def test_atomic_artifact_idempotency_across_connections(tmp_path):
         )
     )
     assert recovered == original
+
+
+def test_assignment_schemas_narrow_factor_without_contaminating_other_workers():
+    tools = ResearchTools()
+    momentum = tools.definitions(["run_backtest", "check_data_leakage"], factor="momentum")
+    earnings = tools.definitions(["run_backtest"], factor="earnings")
+    assert all(t.parameters["properties"]["factor"]["enum"] == ["momentum"] for t in momentum)
+    assert earnings[0].parameters["properties"]["factor"]["enum"] == ["earnings"]
+    unrestricted = tools.definitions(["run_backtest"])[0]
+    assert "future_leak" in unrestricted.parameters["properties"]["factor"]["enum"]
+    assert momentum[0].parameters["properties"]["factor"]["enum"] == ["momentum"]

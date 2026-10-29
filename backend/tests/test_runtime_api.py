@@ -309,3 +309,89 @@ async def test_openai_unexpected_service_tier_stops_further_calls(store, registr
     await Runtime(run, store, registry).execute()
     assert run.status == "budget_exceeded" and provider.calls == 1
     assert not run.metrics.cost_complete and run.metrics.estimated_cost_usd is None
+
+
+async def test_live_baseline_conveys_each_assignment_in_prompt_and_schema(store, registry):
+    class ScopedProvider(MockProvider):
+        assignments = []
+
+        async def generate(self, messages, tools, config):
+            user = next(m for m in reversed(messages) if m.role == "user")
+            instruction = json.loads(user.content)
+            if instruction["phase"] == "research":
+                factor = instruction["factor"]
+                self.assignments.append(factor)
+                assert f"only factor '{factor}'" in instruction["assignment_constraints"]
+                for tool in tools:
+                    if tool.name in {"run_backtest", "check_data_leakage"}:
+                        assert tool.parameters["properties"]["factor"]["enum"] == [factor]
+            return await super().generate(messages, tools, config)
+
+    provider = ScopedProvider()
+    registry.overrides["openai"] = provider
+    run = ResearchRun(
+        request=RunRequest(
+            mode="live",
+            models=ModelAssignments(default=ModelConfig(provider="openai", model="gpt-6-luna")),
+        )
+    )
+    await Runtime(run, store, registry).execute()
+    assert run.status == "completed", run.error
+    assert provider.assignments == [
+        "momentum",
+        "momentum",
+        "earnings",
+        "earnings",
+        "sentiment",
+        "sentiment",
+    ]
+
+
+async def test_out_of_scope_tool_is_rejected_even_if_model_ignores_schema(store, registry):
+    from alpha_mas.models import ModelResponse, ModelUsage, ToolCall
+
+    class IgnoresScope:
+        async def generate(self, *args):
+            return ModelResponse(
+                model="gpt-6-luna",
+                finish_reason="completed",
+                usage=ModelUsage(input_tokens=10, output_tokens=10),
+                tool_calls=[
+                    ToolCall(id="bad", name="run_backtest", arguments={"factor": "earnings"})
+                ],
+            )
+
+    registry.overrides["openai"] = IgnoresScope()
+    run = ResearchRun(
+        request=RunRequest(
+            mode="live",
+            models=ModelAssignments(default=ModelConfig(provider="openai", model="gpt-6-luna")),
+        )
+    )
+    await Runtime(run, store, registry).execute()
+    assert run.status == "failed" and run.metrics.tool_calls == 0
+    rejected = next(e for e in store.events(run.run_id) if e["event_type"] == "tool.rejected")
+    assert rejected["metadata"]["expected_factor"] == "momentum"
+    assert rejected["metadata"]["requested_factor"] == "earnings"
+    assert not store.artifacts(run.run_id)
+
+
+async def test_completed_assignment_compaction_keeps_evidence_and_same_context(store, registry):
+    from alpha_mas.runtime import Session
+
+    run = ResearchRun(request=RunRequest())
+    runtime = Runtime(run, store, registry)
+    session = Session(runtime, "lead", "All families in one context")
+    context = session.task.agent.context_id
+    first = await runtime.research(session, "momentum")
+    assert len(session.messages) == 2
+    memory = json.loads(session.messages[-1].content)["completed_assignment_memory"]
+    assert memory[0]["evidence"][0]["artifact_id"] == first.evidence[0].artifact_id
+    assert memory[0]["net_return"] == first.result.net_return
+    assert not session.messages[-1].private_state
+    await runtime.research(session, "earnings")
+    assert session.task.agent.context_id == context
+    assert [f["factor"] for f in session.retained_findings] == ["momentum", "earnings"]
+    assert len(session.messages) == 2
+    assert len([a for a in store.artifacts(run.run_id) if a["kind"] == "tool_result"]) == 2
+    assert sum(e["event_type"] == "context.compacted" for e in store.events(run.run_id)) == 2

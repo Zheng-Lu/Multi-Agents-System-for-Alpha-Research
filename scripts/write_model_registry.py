@@ -14,13 +14,14 @@ def entry(
     structured=False,
     notes="",
     verified_on="2026-10-28",
+    smoke_tested=None,
 ):
     return dict(
         provider=provider,
         model=model,
         documentation=doc,
         verified_on=verified_on,
-        smoke_tested=provider == "mock",
+        smoke_tested=provider == "mock" if smoke_tested is None else smoke_tested,
         notes=notes or "Documentation checked; live smoke pending.",
         capabilities=dict(
             tool_calling=True,
@@ -93,8 +94,9 @@ entries = [
             effective_date="2026-10-29",
         ),
         verified_on="2026-10-29",
-        notes="Native Responses API; explicit Standard tier, global endpoint, short context. "
-        "Live smoke pending.",
+        smoke_tested=True,
+        notes="Live baseline smoke-tested 2026-10-29: tools, usage, report. "
+        "Standard global short-context pricing. See docs/samples/openai-live-smoke.json.",
     ),
     entry(
         "anthropic",

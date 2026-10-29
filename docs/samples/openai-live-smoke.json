@@ -1,0 +1,303 @@
+{
+  "validated_on": "2026-10-29",
+  "verification_scope": "Live baseline: native multi-turn tool calling, computed research, context compaction, usage and report. Not structured-output or provider token streaming validation.",
+  "run": {
+    "run_id": "bf0e1d34-98a0-4f28-b189-3daebcf21883",
+    "request": {
+      "task": {
+        "prompt": "Evaluate momentum, earnings and news signals for 5-day returns.",
+        "dataset_version": "synthetic-v1",
+        "target_days": 5
+      },
+      "pattern": "baseline",
+      "mode": "live",
+      "models": {
+        "default": {
+          "provider": "openai",
+          "model": "gpt-6-luna",
+          "max_output_tokens": 4096,
+          "reasoning": "default",
+          "stream": false,
+          "response_schema": null
+        },
+        "roles": {},
+        "fallbacks": {},
+        "authorize_fallback_data_transfer": false
+      },
+      "budget": {
+        "max_cost_usd": 0.02,
+        "max_tokens_per_agent": 48000,
+        "max_calls_per_agent": 10,
+        "max_steps": 80,
+        "max_runtime_seconds": 120.0,
+        "max_retries": 0
+      },
+      "max_revisions": 2,
+      "inject_leak": true
+    },
+    "status": "completed",
+    "created_at": "2026-10-29T14:26:58.269742+00:00",
+    "finished_at": "2026-10-29T14:27:40.714973+00:00",
+    "error": null,
+    "metrics": {
+      "model_calls": 7,
+      "tool_calls": 11,
+      "input_tokens": 11815,
+      "output_tokens": 2077,
+      "estimated_cost_usd": 0.00212379,
+      "cost_complete": true,
+      "latency_ms": 42439.79935099924,
+      "retries": 0,
+      "rate_limit_events": 0,
+      "coordination_events": 0
+    }
+  },
+  "invocations": [
+    {
+      "invocation_id": "3bc4b702-1e24-48ef-9923-e3993e3231fc",
+      "run_id": "bf0e1d34-98a0-4f28-b189-3daebcf21883",
+      "task_id": "e672e2f4-54bc-4360-9e65-1614571a020e",
+      "agent_id": "lead",
+      "pattern": "baseline",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 576,
+        "output_tokens": 578,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 451
+      },
+      "estimated_cost_usd": 0.0003466,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 6775.2244860021165,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "97e58c52-57a2-4223-b0ff-7c7e61dd648b",
+      "run_id": "bf0e1d34-98a0-4f28-b189-3daebcf21883",
+      "task_id": "e672e2f4-54bc-4360-9e65-1614571a020e",
+      "agent_id": "lead",
+      "pattern": "baseline",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 3673,
+        "output_tokens": 257,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 114
+      },
+      "estimated_cost_usd": 0.0004958,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 3853.198770004383,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "43773233-6ae1-4764-9bc5-dfaf6baffc37",
+      "run_id": "bf0e1d34-98a0-4f28-b189-3daebcf21883",
+      "task_id": "e672e2f4-54bc-4360-9e65-1614571a020e",
+      "agent_id": "lead",
+      "pattern": "baseline",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 850,
+        "output_tokens": 268,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 183
+      },
+      "estimated_cost_usd": 0.000219,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 4058.658229005232,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "20a48bf9-c46d-45e7-9672-35224c29e3e3",
+      "run_id": "bf0e1d34-98a0-4f28-b189-3daebcf21883",
+      "task_id": "e672e2f4-54bc-4360-9e65-1614571a020e",
+      "agent_id": "lead",
+      "pattern": "baseline",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 1995,
+        "output_tokens": 178,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 67
+      },
+      "estimated_cost_usd": 0.0002885,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 5568.849190000037,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "bfc38f46-813b-4fc6-8435-dd63221ce202",
+      "run_id": "bf0e1d34-98a0-4f28-b189-3daebcf21883",
+      "task_id": "e672e2f4-54bc-4360-9e65-1614571a020e",
+      "agent_id": "lead",
+      "pattern": "baseline",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 1072,
+        "output_tokens": 168,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 85
+      },
+      "estimated_cost_usd": 0.00019119999999999999,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 3380.6748560018605,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "87b7fe3e-b705-4a81-b1ef-35c71ff160b4",
+      "run_id": "bf0e1d34-98a0-4f28-b189-3daebcf21883",
+      "task_id": "e672e2f4-54bc-4360-9e65-1614571a020e",
+      "agent_id": "lead",
+      "pattern": "baseline",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 2531,
+        "output_tokens": 181,
+        "cached_input_tokens": 1069,
+        "reasoning_tokens": 66
+      },
+      "estimated_cost_usd": 0.00024739,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 11209.719512997253,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    },
+    {
+      "invocation_id": "853fb4f6-c6eb-4a45-a21e-9cbc4390efb8",
+      "run_id": "bf0e1d34-98a0-4f28-b189-3daebcf21883",
+      "task_id": "e672e2f4-54bc-4360-9e65-1614571a020e",
+      "agent_id": "lead",
+      "pattern": "baseline",
+      "provider": "openai",
+      "requested_model": "gpt-6-luna",
+      "actual_model": "gpt-6-luna",
+      "original_provider": "openai",
+      "original_model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 1118,
+        "output_tokens": 447,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 324
+      },
+      "estimated_cost_usd": 0.0003353,
+      "cost_complete": true,
+      "simulated": false,
+      "latency_ms": 6639.07372700487,
+      "retry": 0,
+      "status": "completed",
+      "pricing_effective_date": "2026-10-29"
+    }
+  ],
+  "report_artifact_id": "b1f3bb91-dfb7-4a9b-97df-a87e9f2c4457",
+  "computed_candidates": [
+    {
+      "factor": "momentum",
+      "test_ic": 0.09166666666666667,
+      "net_return": 0.039164163659636264,
+      "evidence": [
+        {
+          "artifact_id": "0134f9e6-a9cc-4962-8c9a-7ab32f7bcf15",
+          "dataset_version": "synthetic-v1",
+          "description": "Computed backtest"
+        }
+      ]
+    },
+    {
+      "factor": "earnings",
+      "test_ic": 0.1343537414965986,
+      "net_return": -0.0036391781263621636,
+      "evidence": [
+        {
+          "artifact_id": "86fe60cb-2cee-449e-afad-caa953f6ee44",
+          "dataset_version": "synthetic-v1",
+          "description": "Computed backtest"
+        }
+      ]
+    },
+    {
+      "factor": "sentiment",
+      "test_ic": 0.06541840036985667,
+      "net_return": -0.01610732204113352,
+      "evidence": [
+        {
+          "artifact_id": "8e5b91c9-0a79-4dda-8fc7-3a2d07ef8a3e",
+          "dataset_version": "synthetic-v1",
+          "description": "Computed backtest"
+        }
+      ]
+    }
+  ],
+  "context_checkpoints": [
+    {
+      "context_id": "627c9b13-d48b-4890-b474-7db403312152",
+      "previous_message_count": 9,
+      "retained_message_count": 2,
+      "retained_factors": [
+        "momentum"
+      ],
+      "boundary": "completed assignment; no pending tool calls"
+    },
+    {
+      "context_id": "627c9b13-d48b-4890-b474-7db403312152",
+      "previous_message_count": 8,
+      "retained_message_count": 2,
+      "retained_factors": [
+        "momentum",
+        "earnings"
+      ],
+      "boundary": "completed assignment; no pending tool calls"
+    },
+    {
+      "context_id": "627c9b13-d48b-4890-b474-7db403312152",
+      "previous_message_count": 8,
+      "retained_message_count": 2,
+      "retained_factors": [
+        "momentum",
+        "earnings",
+        "sentiment"
+      ],
+      "boundary": "completed assignment; no pending tool calls"
+    }
+  ]
+}

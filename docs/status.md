@@ -1,5 +1,9 @@
 # Delivery status and continuation
 
+Latest update (2026-10-29): **OpenAI baseline now passes a genuine live smoke test.**
+See the final progress entry and [measured result](samples/openai-live-smoke.json). Earlier entries
+below preserve the state at their original delivery dates.
+
 Session: 2026-10-28. Branch: feat/initial-mas-poc. Started from an empty repository with no commits.
 Python 3.13.2 was present; uv, Node and Chromium were installed locally for implementation/checks.
 Docker is unavailable and unnecessary for the current slice. Nothing has been pushed or deployed.
@@ -61,3 +65,34 @@ Checks for the OpenAI setup increment: 39 backend tests pass, including priced-p
 and stopping on an unexpected served tier; the React interaction test checks OpenAI preset selection
 and restoring Demo Mode. Ruff, mypy, ESLint and the TypeScript/Vite build pass. Browser tests were
 not rerun for this increment; the previous four-browser-check result above is historical.
+
+
+## 2026-10-29 — Live OpenAI baseline validated
+
+The first real baseline request authenticated, reported usage, and computed momentum, then failed
+because a broad task/schema allowed calls that the turn's narrower scope rejected. Factor tool
+schemas and explicit per-assignment instructions now agree; a second live run completed momentum
+and earnings before the original token allowance stopped it. Completed-assignment compaction now
+retains concise computed metrics and evidence references under the same context identity, preserving
+full outputs in artifacts. Scope violations remain rejected and are traced as tool.rejected.
+
+Successful run: bf0e1d34-98a0-4f28-b189-3daebcf21883, served model gpt-6-luna, global Responses
+endpoint, Standard processing. Seven model calls, eleven tool calls, 11,815 input tokens and 2,077
+output tokens, estimated $0.00212379, 42.44 seconds. The $0.02 cost allowance, 48,000 per-agent token
+allowance, ten-call cap and zero retries were unchanged. Report and three computed findings persist
+in alpha-smoke.db; a sanitized validation record is committed under docs/samples.
+
+OpenAI smoke_tested is now true for baseline tools/usage/report only; structured outputs, streaming
+and other patterns' live runs were not validated by this test. A sandbox-restricted connectivity
+attempt also failed before tool execution; its usage/cost remain unknown in the local trace.
+Other providers remain live-unverified. No deployment or push occurred.
+
+Added regressions for assignment schema isolation, prompt/schema agreement, independent runtime
+scope enforcement and evidence-preserving context compaction. Normal tests use mocks exclusively.
+Next: run Generator–Verifier and Orchestrator–Subagent against OpenAI under separate explicit
+budgets, then implement persistent Agent Teams. Chinese-provider live checks are deferred while
+the user prioritizes OpenAI.
+
+Final checks for this fix: 43 backend tests, Ruff lint/format, mypy, React interaction test, ESLint,
+TypeScript/Vite production build, both Chromium end-to-end flows, and six credential-free evaluation
+runs all pass. The browser flows use Demo Mode and did not trigger paid inference.

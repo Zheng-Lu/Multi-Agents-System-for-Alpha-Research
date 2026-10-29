@@ -209,7 +209,11 @@ export default function App() {
   const options = models.map((m) => (
     <option key={key(m)} value={key(m)}>
       {key(m)}
-      {m.smoke_tested ? ' · tested demo' : ' · live unverified'}
+      {m.provider === 'mock'
+        ? ' · tested demo'
+        : m.smoke_tested
+          ? ' · live smoke-tested'
+          : ' · live unverified'}
     </option>
   ));
   const own = visible.filter((e) => e.agent_id === selected);
@@ -310,7 +314,7 @@ export default function App() {
           <div className="mode-note">
             {mode === 'demo'
               ? 'Model decisions are simulated. Tools, calculations, persistence and coordination execute locally.'
-              : 'Requires server opt-in, credentials and a priced model profile. No live model is smoke-verified yet.'}
+              : 'Requires server opt-in, credentials and a priced model profile. Model selectors show live verification status.'}
           </div>
           <button className="model-button" onClick={() => setShowModels(!showModels)}>
             Model assignments <span>{showModels ? '−' : '+'}</span>

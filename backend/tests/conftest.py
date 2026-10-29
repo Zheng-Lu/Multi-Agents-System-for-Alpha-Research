@@ -14,5 +14,5 @@ def registry(monkeypatch):
 
     for name in KEY_NAMES:
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.delenv("ALPHA_ALLOW_LIVE", raising=False)
+    monkeypatch.setenv("ALPHA_ALLOW_LIVE", "false")
     return Registry()

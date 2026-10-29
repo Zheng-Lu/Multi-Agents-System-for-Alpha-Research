@@ -1,7 +1,8 @@
 # Provider integration
 
-Documentation snapshot: 2026-10-28. **All six adapters tested with mocked HTTP; zero real-provider
-inferences tested.** Documentation presence does not establish account access, region support or
+Documentation snapshot: 2026-10-28. **All six adapters tested with mocked HTTP. OpenAI baseline live validation
+completed on 2026-10-29; other providers await live validation.** See the
+[recorded live result](samples/openai-live-smoke.json). Documentation presence does not establish account access, region support or
 model performance. Recheck model IDs/pricing before paid benchmarking.
 
 | Provider | Credential | Default protocol/base | Registry candidate | Official references |

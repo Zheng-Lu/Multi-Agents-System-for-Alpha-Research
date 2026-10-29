@@ -25,7 +25,10 @@ owns a private context, scoped instructions and a tool loop. Only allowlisted, v
 No model can generate shell commands or arbitrary executable research code.
 
 The session persists large tool outputs as artifacts and supplies compact results plus references
-to the model. Model-private reasoning remains in memory solely for provider continuation. Traces
+to the model. Tool schemas are narrowed to the current assignment factor, with a separate runtime
+scope guard. After a tool loop finishes, prior messages are compacted into a private evidence-backed
+memory in the same context identity. Full tool outputs remain in storage. Compaction events are
+observable; no pending tool-call conversation is truncated. Model-private reasoning remains in memory solely for provider continuation. Traces
 contain observable actions, usage and concise summaries. They never expose opaque reasoning blocks.
 Raw provider error bodies are discarded. Known credential values are redacted on persistence.
 

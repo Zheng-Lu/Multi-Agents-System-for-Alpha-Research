@@ -160,12 +160,25 @@ class ResearchTools:
             "records": table[table.symbol == args.symbol].head(args.limit).to_dict("records"),
         }
 
-    def definitions(self, allowed: list[str] | None = None) -> list[ToolDefinition]:
-        return [
-            ToolDefinition(name=name, description=desc, parameters=model.model_json_schema())
-            for name, (model, desc) in self.schemas.items()
-            if allowed is None or name in allowed
-        ]
+    def definitions(
+        self, allowed: list[str] | None = None, *, factor: str | None = None
+    ) -> list[ToolDefinition]:
+        if factor is not None:
+            FactorInput.model_validate({"factor": factor})
+        definitions = []
+        for name, (model, description) in self.schemas.items():
+            if allowed is not None and name not in allowed:
+                continue
+            # Fresh schema per assignment: do not mutate shared definitions across workers.
+            parameters = model.model_json_schema()
+            factor_schema = parameters.get("properties", {}).get("factor")
+            if factor is not None and factor_schema is not None:
+                factor_schema["enum"] = [factor]
+                factor_schema["description"] = "Only this factor is permitted in this assignment."
+            definitions.append(
+                ToolDefinition(name=name, description=description, parameters=parameters)
+            )
+        return definitions
 
     schemas: dict[str, tuple[type[Contract], str]] = {
         "run_backtest": (BacktestConfig, "Compute genuine synthetic 5-day backtest metrics."),

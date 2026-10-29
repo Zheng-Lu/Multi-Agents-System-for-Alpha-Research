@@ -41,6 +41,7 @@ class Session:
                 ),
             )
         ]
+        self.retained_findings: list[dict] = []
         self.parent = runtime.emit(
             "agent.started",
             task=self.task,
@@ -55,12 +56,28 @@ class Session:
 
     async def ask(self, instruction: dict, allowed: list[str]) -> tuple[str, list[dict]]:
         rt = self.runtime
+        scoped_factor = None
+        generator_choice = (
+            self.task.agent.role == "generator"
+            and rt.run.request.mode == "live"
+            and instruction.get("phase") == "research"
+        )
+        if instruction.get("phase") in {"research", "verify"} and not generator_choice:
+            scoped_factor = instruction["factor"]
+            instruction = {
+                **instruction,
+                "assignment_constraints": (
+                    f"Evaluate only factor '{scoped_factor}' in this turn. "
+                    "Other research families are context and will be assigned separately. "
+                    "Do not call factor tools for other families. After computing this assignment, "
+                    "return its summary and wait for the next assignment."
+                ),
+            }
+        definitions = rt.tools.definitions(allowed, factor=scoped_factor)
         self.messages.append(Message(role="user", content=json.dumps(instruction)))
         results: list[dict] = []
         while True:
-            response = await rt.router.invoke(
-                self.task, self.messages, rt.tools.definitions(allowed)
-            )
+            response = await rt.router.invoke(self.task, self.messages, definitions)
             rt.check_cancelled()
             self.messages.append(response.as_message())
             if not response.tool_calls:
@@ -76,12 +93,25 @@ class Session:
                     raise ValueError("Model requested a tool outside this agent's permissions")
                 # Scope is enforced independently of model compliance.
                 if (
-                    instruction.get("phase") == "research"
-                    and call.name == "run_backtest"
-                    and not (self.task.agent.role == "generator" and rt.run.request.mode == "live")
-                    and call.arguments.get("factor") != instruction["factor"]
+                    scoped_factor is not None
+                    and call.name in {"run_backtest", "check_data_leakage"}
+                    and call.arguments.get("factor") != scoped_factor
                 ):
-                    raise ValueError("Backtest factor outside assigned scope")
+                    rt.emit(
+                        "tool.rejected",
+                        task=self.task,
+                        parent=self.parent,
+                        status="failed",
+                        metadata={
+                            "tool": call.name,
+                            "reason": "outside assigned scope",
+                            "expected_factor": scoped_factor,
+                            "requested_factor": call.arguments.get("factor"),
+                        },
+                    )
+                    raise ValueError(
+                        f"{call.name} factor outside assigned scope: expected {scoped_factor}"
+                    )
                 parent = rt.emit(
                     "tool.started",
                     task=self.task,
@@ -118,6 +148,47 @@ class Session:
                         ),
                     )
                 )
+
+    def retain_finding(self, finding: ResearchFinding) -> None:
+        """Compact only completed tool loops, retaining evidence rather than opaque transcripts."""
+        previous_count = len(self.messages)
+        self.retained_findings.append(
+            {
+                "factor": finding.hypothesis.factor,
+                "summary": finding.hypothesis.rationale[:500],
+                "net_return": finding.result.net_return,
+                "test_ic": finding.result.test_ic,
+                "leakage_detected": finding.result.leakage_detected,
+                "dataset_version": finding.dataset_version,
+                "evidence": [e.model_dump() for e in finding.evidence],
+            }
+        )
+        # Each ask has ended without pending tool calls. Provider reasoning state must stay
+        # untouched within a tool loop, but completed loops can be replaced by explicit memory.
+        self.messages = [
+            self.messages[0],
+            Message(
+                role="assistant",
+                content=json.dumps(
+                    {
+                        "completed_assignment_memory": self.retained_findings,
+                        "note": "Full tool outputs remain in stored artifacts.",
+                    }
+                ),
+            ),
+        ]
+        self.runtime.emit(
+            "context.compacted",
+            task=self.task,
+            parent=self.parent,
+            metadata={
+                "context_id": self.task.agent.context_id,
+                "previous_message_count": previous_count,
+                "retained_message_count": len(self.messages),
+                "retained_factors": [f["factor"] for f in self.retained_findings],
+                "boundary": "completed assignment; no pending tool calls",
+            },
+        )
 
     def complete(self, summary: str, output_ref: str | None = None) -> None:
         config = self.runtime.router.resolve(self.task.agent.role)
@@ -227,6 +298,7 @@ class Runtime:
             f"finding:{finding.hypothesis.hypothesis_id}",
             finding.model_dump(mode="json"),
         )
+        session.retain_finding(finding)
         return finding
 
     async def report(

@@ -252,7 +252,7 @@ def test_openai_priced_profile_can_pass_live_preflight(store, registry, monkeypa
     assert entry.pricing.effective_date == "2026-10-29"
     assert entry.pricing.input_per_million == 0.1
     assert entry.pricing.output_per_million == 0.5
-    assert not entry.smoke_tested
+    assert entry.smoke_tested
     monkeypatch.setenv("OPENAI_API_KEY", "local-test-key")
     run = ResearchRun(request=RunRequest(mode="live", models=ModelAssignments(default=config)))
     Runtime(run, store, registry).router.preflight()

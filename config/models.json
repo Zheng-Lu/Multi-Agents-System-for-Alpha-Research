@@ -103,8 +103,8 @@
     "model": "gpt-6-luna",
     "documentation": "https://developers.openai.com/api/docs/models/gpt-6-luna",
     "verified_on": "2026-10-29",
-    "smoke_tested": false,
-    "notes": "Native Responses API; explicit Standard tier, global endpoint, short context. Live smoke pending.",
+    "smoke_tested": true,
+    "notes": "Live baseline smoke-tested 2026-10-29: tools, usage, report. Standard global short-context pricing. See docs/samples/openai-live-smoke.json.",
     "capabilities": {
       "tool_calling": true,
       "parallel_tool_calls": null,

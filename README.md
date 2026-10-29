@@ -5,8 +5,8 @@ research task. Model decisions are simulated in Demo Mode; coordination, typed t
 SQLite persistence and event streaming execute locally.
 
 **Current delivery:** Single-Agent baseline, Generator–Verifier and Orchestrator–Subagent work
-end to end. Six live-provider adapters are implemented and tested with mocked HTTP.
-**No paid provider has been smoke-tested.** Agent Teams, Message Bus, Shared State and Hybrid
+end to end. Six provider adapters are implemented and tested with mocked HTTP.
+**OpenAI now passes a real baseline smoke test**; other providers await live validation. Agent Teams, Message Bus, Shared State and Hybrid
 remain disabled in the UI. This is a working initial increment, not the complete brief.
 See [milestone status and continuation](docs/status.md).
 
@@ -56,7 +56,8 @@ export PATH="$PWD/.venv/bin:$PWD/.tools/node-v22.16.0-darwin-x64/bin:$PATH"
 ## Live inference (opt-in)
 
 For OpenAI, follow the [OpenAI quickstart](docs/openai-quickstart.md). A priced Standard profile
-and a dedicated UI preset are available; a real API key and live smoke validation are still needed.
+and a dedicated UI preset are available. A real baseline was validated on 2026-10-29; your local
+configuration still needs an authorized API key.
 
 
 Copy `.env.example` to `.env`. Put keys on the backend only. Set `ALPHA_ALLOW_LIVE=true`

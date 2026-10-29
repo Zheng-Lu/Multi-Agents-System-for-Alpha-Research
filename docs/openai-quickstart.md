@@ -1,8 +1,10 @@
 # Use the lab with OpenAI
 
 Prepared 2026-10-29. The native Responses adapter and role-level configuration already exist.
-The `gpt-6-luna` profile now includes dated Standard pricing. Live validation remains pending:
-no key is configured and no paid request was made during this setup.
+The `gpt-6-luna` profile now includes dated Standard pricing. Live baseline validation succeeded
+on 2026-10-29: 7 model calls, 11 tool calls, an estimated $0.00212379, and a persisted report.
+See the [validation record](samples/openai-live-smoke.json). Pattern-specific live validation for
+Generator–Verifier and Orchestrator–Subagent is still pending.
 
 1. Open the repository's `.env` locally. It is ignored by Git. Set:
 
@@ -50,3 +52,9 @@ profile is for the global endpoint and small prompts; review rates for other con
 Do not mark smoke_tested true merely after entering a key. First inspect a successful run's tool
 artifacts, served model, usage, cost completeness and report. Demo Mode continues to use MockProvider
 and makes no paid calls even when OpenAI credentials are configured.
+
+
+The first real run exposed an assignment scope mismatch; a subsequent run reached its conservative
+token allowance. The runtime now narrows factor schemas per assignment and compacts completed
+assignments into evidence-backed memory. Full outputs remain stored; provider continuation state
+stays intact within each active tool loop. No budget was increased for the successful validation.
