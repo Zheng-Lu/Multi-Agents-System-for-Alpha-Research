@@ -119,6 +119,8 @@ class ModelAssignments(Contract):
 
 class Budget(Contract):
     max_cost_usd: float = Field(default=0.10, ge=0, le=10)
+    max_tokens_per_run: int = Field(default=200000, ge=1, le=800000)
+    max_calls_per_run: int = Field(default=40, ge=1, le=160)
     max_tokens_per_agent: int = Field(default=48000, ge=1, le=200000)
     max_calls_per_agent: int = Field(default=10, ge=1, le=40)
     max_steps: int = Field(default=80, ge=1, le=300)
@@ -288,6 +290,9 @@ class RunMetrics(Contract):
     retries: int = 0
     rate_limit_events: int = 0
     coordination_events: int = 0
+    peak_input_tokens_by_agent: dict[str, int | None] = Field(default_factory=dict)
+    peak_input_tokens: int | None = None
+    usage_complete: bool = False
 
 
 class ResearchRun(Contract):

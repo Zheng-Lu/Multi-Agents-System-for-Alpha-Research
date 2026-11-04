@@ -460,6 +460,17 @@ class Runtime:
         records = self.store.invocations(self.run.run_id)
         events = self.store.events(self.run.run_id)
         complete = all(r["cost_complete"] for r in records)
+        peaks: dict[str, int | None] = {}
+        for record in records:
+            agent, tokens = record["agent_id"], record["usage"]["input_tokens"]
+            if tokens is None or (agent in peaks and peaks[agent] is None):
+                peaks[agent] = None
+            else:
+                peaks[agent] = max(peaks.get(agent) or 0, tokens)
+        usage_complete = bool(records) and all(
+            r["usage"]["input_tokens"] is not None and r["usage"]["output_tokens"] is not None
+            for r in records
+        )
         return RunMetrics(
             model_calls=len(records),
             tool_calls=sum(e["event_type"] == "tool.completed" for e in events),
@@ -476,6 +487,11 @@ class Runtime:
                 e["event_type"].startswith(("handoff.", "verification.", "revision."))
                 for e in events
             ),
+            peak_input_tokens_by_agent=peaks,
+            peak_input_tokens=max((v for v in peaks.values() if v is not None), default=None)
+            if usage_complete
+            else None,
+            usage_complete=usage_complete,
         )
 
     async def execute(self) -> None:

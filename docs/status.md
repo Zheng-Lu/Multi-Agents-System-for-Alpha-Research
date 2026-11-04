@@ -1,5 +1,16 @@
 # Delivery status and continuation
 
+## 2026-11-04 — Controlled comparison foundation
+
+Added aggregate per-run model-call/token limits with atomic reservations across concurrent workers.
+Per-agent limits and cost/step/runtime controls still apply. Metrics record peak input tokens per
+invocation by agent and explicit usage completeness; missing usage does not become a measured zero.
+These are provider-reported inputs (estimated under MockProvider), not total resident context.
+See decisions/002-controlled-comparisons.md for the scoped comparison design.
+
+Validation: 48 backend tests, Ruff and mypy pass. No paid inference. Next: versioned challenge
+evidence, structured proposals/reviews, common publication gate and controlled scorecards.
+
 Latest update (2026-10-29): **OpenAI baseline and Generator–Verifier pass live smoke tests.**
 See the final progress entry and [measured result](samples/openai-live-smoke.json). Earlier entries
 below preserve the state at their original delivery dates.

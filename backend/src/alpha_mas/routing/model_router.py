@@ -108,10 +108,14 @@ class ModelRouter:
                     )
                 if self.calls[task.agent.agent_id] >= budget.max_calls_per_agent:
                     raise BudgetExceeded("Maximum model calls per agent reached")
+                if sum(self.calls.values()) >= budget.max_calls_per_run:
+                    raise BudgetExceeded("Maximum model calls per run reached")
                 if self.tokens[task.agent.agent_id] + allowance > budget.max_tokens_per_agent:
                     raise BudgetExceeded(
                         "Token allowance exceeds per-agent budget; shorten context"
                     )
+                if sum(self.tokens.values()) + allowance > budget.max_tokens_per_run:
+                    raise BudgetExceeded("Token allowance exceeds aggregate run budget")
                 if upper_cost is None or self.reserved_cost + upper_cost > budget.max_cost_usd:
                     raise BudgetExceeded(
                         "Estimated request allowance exceeds remaining cost budget"
@@ -218,6 +222,8 @@ class ModelRouter:
                 )
                 if self.tokens[task.agent.agent_id] > budget.max_tokens_per_agent:
                     raise BudgetExceeded("Reported token usage exceeded allowance; run stopped")
+                if sum(self.tokens.values()) > budget.max_tokens_per_run:
+                    raise BudgetExceeded("Reported token usage exceeded aggregate run allowance")
                 if self.reserved_cost > budget.max_cost_usd:
                     raise BudgetExceeded("Reported estimated cost exceeded budget; run stopped")
                 return response
