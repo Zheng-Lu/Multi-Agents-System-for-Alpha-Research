@@ -4,6 +4,8 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from alpha_mas.comparison import CompareRequest, prepare_comparison, scorecard
+from alpha_mas.experiments import CASES
 from alpha_mas.models import (
     Contract,
     ExecutionEvent,
@@ -85,6 +87,7 @@ def create_app(db_path: str | None = None, registry: Registry | None = None) -> 
     store = Store(db_path or os.getenv("ALPHA_DB") or str(ROOT / "alpha-lab.db"))
     registry = registry or Registry()
     running: dict[str, tuple[Runtime, asyncio.Task]] = {}
+    comparison_active: set[str] = set()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -171,7 +174,56 @@ def create_app(db_path: str | None = None, registry: Registry | None = None) -> 
                 "prompt": "Review a candidate that mistakenly uses "
                 "future returns; revise it and verify the temporal correction.",
             },
+            *[{"case_id": case_id, **case} for case_id, case in CASES.items()],
         ]
+
+    def launch(run: ResearchRun, runtime: Runtime, serial: asyncio.Lock | None = None) -> None:
+        async def execute():
+            if serial is None:
+                await runtime.execute()
+            else:
+                async with serial:
+                    await runtime.execute()
+
+        def finished(_: asyncio.Task) -> None:
+            running.pop(run.run_id, None)
+            comparison_active.discard(run.run_id)
+
+        store.save_run(run)
+        task = asyncio.create_task(execute())
+        running[run.run_id] = runtime, task
+        task.add_done_callback(finished)
+
+    @app.get("/api/evaluations")
+    async def evaluations():
+        return [scorecard(group, store) for group in store.comparisons()]
+
+    @app.post("/api/evaluations/compare", status_code=202)
+    async def compare(request: CompareRequest):
+        if running:
+            raise HTTPException(
+                429, "Finish or cancel active runs before starting a four-run comparison"
+            )
+        group, runs = prepare_comparison(request)
+        runtimes = [Runtime(run, store, registry) for run in runs]
+        try:
+            for runtime in runtimes:
+                runtime.router.preflight()
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        store.save_comparison(group)
+        serial = asyncio.Lock()
+        for run, runtime in zip(runs, runtimes, strict=True):
+            comparison_active.add(run.run_id)
+            launch(run, runtime, serial)
+        return scorecard(group, store)
+
+    @app.get("/api/evaluations/{comparison_id}")
+    async def evaluation(comparison_id: str):
+        try:
+            return scorecard(store.comparison(comparison_id), store)
+        except KeyError as exc:
+            raise HTTPException(404, "Comparison not found") from exc
 
     @app.get("/api/runs")
     async def runs():
@@ -185,6 +237,10 @@ def create_app(db_path: str | None = None, registry: Registry | None = None) -> 
                 "Live inference disabled. Set ALPHA_ALLOW_LIVE=true server-side "
                 "to authorize bounded paid calls.",
             )
+        if comparison_active:
+            raise HTTPException(
+                429, "A controlled comparison is in progress; wait or cancel its runs"
+            )
         if len(running) >= 4:
             raise HTTPException(429, "At most four concurrent runs are permitted")
         run = ResearchRun(request=request)
@@ -193,10 +249,7 @@ def create_app(db_path: str | None = None, registry: Registry | None = None) -> 
             runtime.router.preflight()
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
-        store.save_run(run)
-        task = asyncio.create_task(runtime.execute())
-        running[run.run_id] = runtime, task
-        task.add_done_callback(lambda _: running.pop(run.run_id, None))
+        launch(run, runtime)
         return store.run(run.run_id)
 
     @app.get("/api/runs/{run_id}")
@@ -209,8 +262,11 @@ def create_app(db_path: str | None = None, registry: Registry | None = None) -> 
         if run_id in running:
             runtime, task = running[run_id]
             runtime.cancelled = True
-            if runtime.run.status == "running":
-                task.cancel()
+            if runtime.run.status == "queued":
+                runtime.run.status, runtime.run.finished_at = "cancelled", now()
+                store.save_run(runtime.run)
+                runtime.emit("run.cancelled", status="cancelled")
+            task.cancel()
             await asyncio.gather(task, return_exceptions=True)
             return store.run(run_id)
         return run

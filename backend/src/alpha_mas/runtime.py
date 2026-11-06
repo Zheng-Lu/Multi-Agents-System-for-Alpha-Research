@@ -5,6 +5,7 @@ from typing import Any
 
 from alpha_mas.models import (
     AgentIdentity,
+    AgentProposal,
     AgentTask,
     BacktestResult,
     EvidenceReference,
@@ -14,6 +15,7 @@ from alpha_mas.models import (
     ResearchFinding,
     ResearchHypothesis,
     ResearchRun,
+    ReviewDecision,
     RunMetrics,
     ToolCall,
     VerificationResult,
@@ -24,6 +26,14 @@ from alpha_mas.providers.registry import Registry
 from alpha_mas.research.tools import ResearchTools
 from alpha_mas.routing.model_router import BudgetExceeded, ModelRouter
 from alpha_mas.storage.sqlite import Store
+
+CONTROLLED_RESEARCH_TOOLS = [
+    "run_backtest",
+    "get_price_data",
+    "get_earnings_events",
+    "get_news_events",
+    "inspect_temporal_alignment",
+]
 
 
 class Session:
@@ -57,6 +67,8 @@ class Session:
         )
 
     async def ask(self, instruction: dict, allowed: list[str]) -> tuple[str, list[dict]]:
+        if instruction.get("phase") == "research_batch":
+            return await self.ask_parallel(instruction)
         rt = self.runtime
         self.assignment_number += 1
         assignment_id = f"{self.task.agent.context_id}:{self.assignment_number}"
@@ -64,7 +76,7 @@ class Session:
         generator_choice = (
             instruction.get("allow_factor_choice", False) and instruction.get("phase") == "research"
         )
-        if instruction.get("phase") in {"research", "verify"} and not generator_choice:
+        if instruction.get("phase") in {"research", "verify", "review"} and not generator_choice:
             scoped_factor = instruction["factor"]
             instruction = {
                 **instruction,
@@ -79,6 +91,8 @@ class Session:
             "research": "run_backtest",
             "verify": "check_data_leakage",
             "plan": "delegate_research",
+            "review": "submit_review",
+            "propose": "submit_proposal",
         }.get(str(instruction.get("phase", "")))
         instruction = {
             **instruction,
@@ -94,7 +108,15 @@ class Session:
                 "run_backtest already computes one fixed factor from the versioned dataset. "
                 "Additional data retrieval is optional, not a required checklist."
             )
-        definitions = rt.tools.definitions(allowed, factor=scoped_factor)
+        if instruction.get("phase") == "review":
+            instruction["tool_policy"] = (
+                "First call inspect_temporal_alignment. Read the returned timestamps and records. "
+                "On a subsequent response, submit_review for the exact finding/version, citing "
+                "the inspection artifact. Do not infer validity from backtest performance. "
+                "Availability must be no later than decision_at. Summarize after submitting."
+            )
+        permitted_factors = instruction.get("permitted_factors")
+        definitions = rt.tools.definitions(allowed, factor=scoped_factor, factors=permitted_factors)
         self.messages.append(Message(role="user", content=json.dumps(instruction)))
         results: list[dict] = []
         cache: dict[tuple[str, str], dict] = {}
@@ -120,6 +142,9 @@ class Session:
                         "policy": "Only the first 8 calls are eligible; excess calls get errors.",
                     },
                 )
+            previously_observed = {
+                r["artifact_id"] for r in results if r["tool"] == "inspect_temporal_alignment"
+            }
             for index, call in enumerate(response.tool_calls):
                 rt.check_cancelled()
                 rt.router.step()
@@ -133,6 +158,53 @@ class Session:
                 arguments = (
                     rt.tools.schemas[call.name][0].model_validate(call.arguments).model_dump()
                 )
+                if call.name == "run_backtest" and rt.run.request.experiment:
+                    if arguments["cost_bps"] != 10 or arguments["split_fraction"] != 0.65:
+                        self.reject_tool(
+                            call,
+                            "fixed_backtest_controls",
+                            "Controlled workloads fix costs at 10 bps and split_fraction at 0.65.",
+                        )
+                        continue
+                if (
+                    permitted_factors
+                    and "factor" in arguments
+                    and arguments["factor"] not in permitted_factors
+                ):
+                    self.reject_tool(
+                        call,
+                        "candidate_scope",
+                        "Select a factor from this assignment's permitted_factors.",
+                    )
+                    continue
+                if call.name == "submit_review":
+                    expected = instruction["candidate"]
+                    if (
+                        not arguments["evidence_refs"]
+                        or not set(arguments["evidence_refs"]).issubset(previously_observed)
+                        or any(
+                            arguments[k] != expected[k]
+                            for k in ["finding_id", "candidate_id", "version"]
+                        )
+                    ):
+                        self.reject_tool(
+                            call,
+                            "review_requires_evidence",
+                            "Inspect evidence in an earlier model response, then cite that "
+                            "artifact and the exact candidate version.",
+                        )
+                        continue
+                if call.name == "submit_proposal":
+                    known = {f["finding_id"] for f in instruction["findings"]}
+                    ids = arguments["finding_ids"]
+                    if len(ids) != len(set(ids)) or not set(ids).issubset(known):
+                        self.reject_tool(
+                            call,
+                            "unknown_proposal_finding",
+                            "Propose distinct finding_ids from the supplied findings, "
+                            "or an empty list.",
+                        )
+                        continue
                 cache_key = (call.name, json.dumps(arguments, sort_keys=True))
                 if cache_key in cache:
                     reused = cache[cache_key]
@@ -155,7 +227,8 @@ class Session:
                 # Scope is enforced independently of model compliance.
                 if (
                     scoped_factor is not None
-                    and call.name in {"run_backtest", "check_data_leakage"}
+                    and call.name
+                    in {"run_backtest", "check_data_leakage", "inspect_temporal_alignment"}
                     and call.arguments.get("factor") != scoped_factor
                 ):
                     if generator_choice and required_done:
@@ -232,6 +305,127 @@ class Session:
             )
         )
 
+    async def ask_parallel(self, instruction: dict) -> tuple[str, list[dict]]:
+        """One agent/context issues concurrent tool calls; never parallel model conversations."""
+        rt = self.runtime
+        self.assignment_number += 1
+        assignment = f"{self.task.agent.context_id}:{self.assignment_number}"
+        factors = instruction["factors"]
+        self.messages.append(
+            Message(
+                role="user",
+                content=json.dumps(
+                    {
+                        **instruction,
+                        "tool_policy": "Backtest each supplied factor once, preferably in one "
+                        "parallel tool-call response. Costs are 10 bps and split_fraction is 0.65. "
+                        "Summarize when all results exist.",
+                    }
+                ),
+            )
+        )
+        results: dict[str, dict] = {}
+        while True:
+            definitions = (
+                rt.tools.definitions(CONTROLLED_RESEARCH_TOOLS, factors=factors)
+                if not all(f in results for f in factors)
+                else []
+            )
+            response = await rt.router.invoke(self.task, self.messages, definitions)
+            rt.check_cancelled()
+            self.messages.append(response.as_message())
+            if not response.tool_calls:
+                if not all(f in results for f in factors) or response.finish_reason in {
+                    "length",
+                    "incomplete",
+                    "max_tokens",
+                }:
+                    raise ValueError(
+                        "Parallel-tools control must compute every candidate before finishing"
+                    )
+                return response.text, [results[f] for f in factors]
+            if not definitions:
+                raise ValueError("Model requested tools after the parallel assignment closed")
+            pending: dict[str, tuple[ToolCall, dict]] = {}
+            replies: dict[str, dict] = {}
+            eligible: dict[str, str] = {}
+            for index, call in enumerate(response.tool_calls):
+                rt.router.step()
+                if index >= 8 or call.name not in CONTROLLED_RESEARCH_TOOLS:
+                    self.reject_tool(
+                        call,
+                        "parallel_tool_scope",
+                        "At most eight allowlisted research calls are eligible.",
+                    )
+                    continue
+                args = rt.tools.schemas[call.name][0].model_validate(call.arguments).model_dump()
+                if ("factor" in args and args["factor"] not in factors) or (
+                    call.name == "run_backtest"
+                    and (args["cost_bps"] != 10 or args["split_fraction"] != 0.65)
+                ):
+                    self.reject_tool(
+                        call,
+                        "fixed_backtest_controls",
+                        "Use the supplied factors, 10 bps costs and a 0.65 split.",
+                    )
+                    continue
+                key = (
+                    args["factor"]
+                    if call.name == "run_backtest"
+                    else call.name + json.dumps(args, sort_keys=True)
+                )
+                eligible[call.id] = key
+                if key in results:
+                    replies[call.id] = results[key]
+                elif key not in pending:
+                    pending[key] = (call, args)
+
+            async def compute(key: str, call: ToolCall, args: dict) -> None:
+                rt.check_cancelled()
+                parent = rt.emit(
+                    "tool.started",
+                    task=self.task,
+                    parent=self.parent,
+                    status="running",
+                    metadata={
+                        "tool": call.name,
+                        "arguments": args,
+                        "parallel_tools": True,
+                    },
+                )
+                output = await asyncio.to_thread(rt.tools.execute, call.name, args)
+                rt.check_cancelled()
+                artifact = rt.artifact(
+                    self.task.agent.agent_id,
+                    "tool_result",
+                    f"{assignment}:{key}",
+                    {"tool": call.name, "arguments": args, "result": output},
+                )
+                rt.emit(
+                    "tool.completed",
+                    task=self.task,
+                    parent=parent,
+                    output_ref=artifact.artifact_id,
+                    metadata={"tool": call.name, "parallel_tools": True},
+                )
+                results[key] = {
+                    "tool": call.name,
+                    "result": output,
+                    "artifact_id": artifact.artifact_id,
+                }
+
+            async with asyncio.TaskGroup() as group:
+                for key, (call, args) in pending.items():
+                    group.create_task(compute(key, call, args))
+            for call in response.tool_calls[:8]:
+                if call.id not in eligible:
+                    continue
+                factor = eligible[call.id]
+                if call.id in replies:
+                    self.reply_tool(call, replies[call.id])
+                elif factor in pending:
+                    self.reply_tool(call, results[factor])
+
     def reject_tool(self, call: ToolCall, reason: str, feedback: str) -> None:
         self.runtime.emit(
             "tool.rejected",
@@ -261,6 +455,13 @@ class Session:
                 "leakage_detected": finding.result.leakage_detected,
                 "dataset_version": finding.dataset_version,
                 "evidence": [e.model_dump() for e in finding.evidence],
+                "candidate_id": finding.candidate_id,
+                "version": finding.version,
+                "reviews": [
+                    r.model_dump()
+                    for r in self.runtime.reviews
+                    if r.finding_id == finding.finding_id
+                ],
             }
         )
         # Each ask has ended without pending tool calls. Provider reasoning state must stay
@@ -316,6 +517,7 @@ class Runtime:
         self.router = ModelRouter(run, registry, store, self.emit)
         self.cancelled = False
         self.root_event: str | None = None
+        self.reviews: list[ReviewDecision] = []
 
     def emit(
         self,
@@ -362,6 +564,10 @@ class Runtime:
         feedback: list[str] | None = None,
         *,
         allow_factor_choice: bool = False,
+        candidate_id: str | None = None,
+        previous: ResearchFinding | None = None,
+        choices: list[str] | None = None,
+        compact: bool = True,
     ) -> ResearchFinding:
         summary, results = await session.ask(
             {
@@ -370,8 +576,11 @@ class Runtime:
                 "request": self.run.request.task.prompt,
                 "feedback": feedback or [],
                 "allow_factor_choice": allow_factor_choice,
+                "permitted_factors": choices,
             },
-            [
+            CONTROLLED_RESEARCH_TOOLS
+            if self.run.request.experiment
+            else [
                 "run_backtest",
                 "get_price_data",
                 "get_earnings_events",
@@ -397,6 +606,9 @@ class Runtime:
                 )
             ],
             limitations=result.limitations,
+            candidate_id=candidate_id,
+            version=previous.version + 1 if previous else 1,
+            supersedes_finding_id=previous.finding_id if previous else None,
         )
         self.artifact(
             finding.agent_id,
@@ -404,16 +616,130 @@ class Runtime:
             f"finding:{finding.hypothesis.hypothesis_id}",
             finding.model_dump(mode="json"),
         )
-        session.retain_finding(finding)
+        if compact:
+            session.retain_finding(finding)
         return finding
+
+    async def review(
+        self, session: Session, finding: ResearchFinding, *, parent: str | None = None
+    ) -> tuple[ReviewDecision, str]:
+        from alpha_mas.experiments import finding_context
+
+        _, results = await session.ask(
+            {
+                "phase": "review",
+                "factor": finding.hypothesis.factor,
+                "candidate": finding_context(finding),
+            },
+            ["inspect_temporal_alignment", "submit_review"],
+        )
+        submitted = [r for r in results if r["tool"] == "submit_review"]
+        if not submitted:
+            raise ValueError("Reviewer must inspect evidence and submit a versioned review")
+        review = ReviewDecision.model_validate(submitted[-1]["result"])
+        review.reviewer_agent_id = session.task.agent.agent_id
+        self.reviews.append(review)
+        artifact = self.artifact(
+            session.task.agent.agent_id,
+            "review",
+            f"review:{finding.finding_id}",
+            review.model_dump(),
+        )
+        event = self.emit(
+            "verification." + review.verdict,
+            task=session.task,
+            parent=parent or session.parent,
+            output_ref=artifact.artifact_id,
+            metadata=review.model_dump(),
+        )
+        return review, event
+
+    async def research_parallel(
+        self, session: Session, factors: list[str]
+    ) -> list[ResearchFinding]:
+        summary, results = await session.ask(
+            {
+                "phase": "research_batch",
+                "factors": factors,
+                "request": self.run.request.task.prompt,
+            },
+            ["run_backtest"],
+        )
+        findings = []
+        for latest in results:
+            result = BacktestResult.model_validate(latest["result"])
+            finding = ResearchFinding(
+                hypothesis=ResearchHypothesis(
+                    factor=result.config.factor, rationale=summary[:1500]
+                ),
+                agent_id=session.task.agent.agent_id,
+                candidate_id=result.config.factor,
+                methodology=result.methodology,
+                result=result,
+                limitations=result.limitations,
+                evidence=[
+                    EvidenceReference(
+                        artifact_id=latest["artifact_id"], description="Computed backtest"
+                    )
+                ],
+            )
+            self.artifact(
+                finding.agent_id,
+                "finding",
+                f"finding:{finding.finding_id}",
+                finding.model_dump(mode="json"),
+            )
+            findings.append(finding)
+        return findings
+
+    async def propose(self, session: Session, findings: list[ResearchFinding]) -> AgentProposal:
+        from alpha_mas.experiments import finding_context
+
+        _, results = await session.ask(
+            {
+                "phase": "propose",
+                "findings": [finding_context(f) for f in findings],
+                "reviews": [r.model_dump() for r in self.reviews],
+                "request": self.run.request.task.prompt,
+            },
+            ["submit_proposal"],
+        )
+        submitted = [r for r in results if r["tool"] == "submit_proposal"]
+        if not submitted:
+            raise ValueError(
+                "Agent must submit a structured proposal; "
+                "no recommendation is inferred from a metric sort"
+            )
+        proposal = AgentProposal.model_validate(submitted[-1]["result"])
+        self.artifact(
+            session.task.agent.agent_id, "agent_proposal", "agent-proposal", proposal.model_dump()
+        )
+        return proposal
 
     async def report(
         self,
         session: Session,
         findings: list[ResearchFinding],
         verifications: list[VerificationResult] | None = None,
+        proposal: AgentProposal | None = None,
     ) -> None:
-        safe = [f for f in findings if not f.result.leakage_detected]
+        from alpha_mas.experiments import publication
+
+        gates = [publication(f, self.reviews, self.tools) for f in findings] if proposal else []
+        safe = (
+            [
+                f
+                for f in findings
+                if any(
+                    gate["finding_id"] == f.finding_id and gate["state"] == "verified_valid"
+                    for gate in gates
+                )
+            ]
+            if proposal
+            else [
+                f for f in findings if all(self.tools.temporal_gate(f.hypothesis.factor).values())
+            ]
+        )
         # Synthesis sees structured results, never worker conversation histories.
         summary, _ = await session.ask(
             {
@@ -443,6 +769,26 @@ class Runtime:
             "ranked_candidates": [f.hypothesis.factor for f in ranked],
             "findings": [f.model_dump(mode="json") for f in findings],
             "verifications": [v.model_dump() for v in verifications or []],
+            "reviews": [r.model_dump() for r in self.reviews],
+            "agent_proposal": proposal.model_dump() if proposal else None,
+            "publication": gates,
+            "published_recommendations": [
+                i
+                for i in proposal.finding_ids
+                if any(g["finding_id"] == i and g["state"] == "verified_valid" for g in gates)
+            ]
+            if proposal
+            else [],
+            "blocked_recommendations": [
+                i
+                for i in proposal.finding_ids
+                if not any(g["finding_id"] == i and g["state"] == "verified_valid" for g in gates)
+            ]
+            if proposal
+            else [],
+            "experiment": self.run.request.experiment.model_dump()
+            if self.run.request.experiment
+            else None,
             "limitations": [
                 "Synthetic random market; process correctness only.",
                 "Selected factors and evaluation are exploratory, not proof of alpha.",

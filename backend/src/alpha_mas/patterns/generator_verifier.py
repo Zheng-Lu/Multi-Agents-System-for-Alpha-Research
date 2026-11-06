@@ -4,6 +4,27 @@ from alpha_mas.runtime import Runtime, Session
 
 
 async def execute(runtime: Runtime) -> None:
+    if runtime.run.request.experiment:
+        from alpha_mas.experiments import CASES
+        from alpha_mas.patterns.review import investigate
+
+        generator = Session(
+            runtime, "generator", "Generate the common workload and revise from review evidence"
+        )
+        verifier = Session(
+            runtime, "verifier", "Independent review of scoped versions; no generator conversation"
+        )
+        findings = []
+        for candidate_factor in CASES[runtime.run.request.experiment.case_id]["candidates"]:
+            findings.extend(await investigate(runtime, generator, verifier, candidate_factor))
+        generator.complete("Common candidate workload completed within revision limits.")
+        verifier.complete("Versioned review decisions persisted independently of grading.")
+        lead = Session(
+            runtime, "lead", "Synthesize finding/review handoffs and submit a recommendation"
+        )
+        proposal = await runtime.propose(lead, findings)
+        await runtime.report(lead, findings, proposal=proposal)
+        return
     generator = Session(
         runtime, "generator", "Generate and revise a candidate using structured feedback"
     )

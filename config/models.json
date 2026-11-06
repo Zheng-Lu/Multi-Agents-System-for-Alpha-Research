@@ -8,7 +8,7 @@
     "notes": "Simulated decisions; real research tools.",
     "capabilities": {
       "tool_calling": true,
-      "parallel_tool_calls": null,
+      "parallel_tool_calls": true,
       "structured_output": false,
       "streaming": false,
       "reasoning_mode": false,

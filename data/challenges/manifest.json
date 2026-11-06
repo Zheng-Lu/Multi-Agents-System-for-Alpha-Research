@@ -1,0 +1,9 @@
+{
+  "version": "earnings-revisions-v1",
+  "synthetic": true,
+  "seed": 20261104,
+  "source_sha256": "1d87884ab2c4c210aaf4e6fcd81ee1067466b4c9790dd49913e1ae35f4b6da70",
+  "files": {
+    "earnings-revisions-v1.csv": "0a431b4b810d941d9709be18d14f77b19e66b881754578c546afbb1577806d7f"
+  }
+}

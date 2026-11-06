@@ -1,5 +1,27 @@
 # Delivery status and continuation
 
+## 2026-11-06 — Controlled workloads and review boundary
+
+Implemented independent-work-v1 and review-repair-v1 across the Single-Agent, Generator–Verifier
+and Orchestrator–Subagent paths, plus a genuine single-context parallel-tools control. Every
+variant has the same candidate workload, backtest settings and aggregate budget. Completed context
+compaction preserves candidate/version evidence and review decisions. The same scripted timestamp
+rule applies to every demo reviewer; no baseline failure or multi-agent advantage is scripted.
+
+Added checksum-verified synthetic earnings revisions, evidence-only inspection, native typed review
+and proposal tool submissions, explicit repair lineage and the common three-state publication gate.
+Reviewers cannot invoke the grading oracle in controlled assignments. Missed issues and blocked
+recommendations remain recorded. Historical mechanism demonstrations and replay formats remain.
+
+Added durable comparison groups and GET /api/evaluations, GET /api/evaluations/{id}, and
+POST /api/evaluations/compare. Four variants execute serially to avoid cross-run contention; work
+inside each variant can run concurrently. The group endpoint is Demo-only, regardless of live
+server opt-in. It retains failures and supports cancellation of queued runs. Individual controlled
+live runs are configurable but have only mocked protocol validation at this point.
+
+Validation: 67 backend tests, Ruff and mypy pass. No paid calls. Frontend scorecard implementation
+is in progress; next validate its interaction, persisted group reopening and run inspection in Chromium.
+
 ## 2026-11-04 — Controlled comparison foundation
 
 Added aggregate per-run model-call/token limits with atomic reservations across concurrent workers.

@@ -30,6 +30,8 @@ class Store:
                     id TEXT PRIMARY KEY, run_id TEXT NOT NULL, payload TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS configurations(
                     name TEXT PRIMARY KEY, payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS comparisons(
+                    id TEXT PRIMARY KEY, payload TEXT NOT NULL);
             """)
 
     @contextmanager
@@ -130,6 +132,29 @@ class Store:
                 {"name": r[0], "models": json.loads(r[1])}
                 for r in conn.execute("SELECT name,payload FROM configurations ORDER BY name")
             ]
+
+    def save_comparison(self, group: dict) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO comparisons VALUES(?,?)",
+                (group["comparison_id"], redact(json.dumps(group))),
+            )
+
+    def comparisons(self) -> list[dict]:
+        with self.connect() as conn:
+            return [
+                json.loads(row[0])
+                for row in conn.execute("SELECT payload FROM comparisons ORDER BY rowid DESC")
+            ]
+
+    def comparison(self, comparison_id: str) -> dict:
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT payload FROM comparisons WHERE id=?", (comparison_id,)
+            ).fetchone()
+        if not row:
+            raise KeyError(comparison_id)
+        return json.loads(row[0])
 
     def save_configuration(self, name: str, payload: dict[str, Any]) -> None:
         with self.connect() as conn:

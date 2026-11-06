@@ -36,6 +36,24 @@ def test_after_close_earnings_unavailable_at_same_close():
     )
 
 
+def test_revision_challenge_backtest_is_ungraded_and_evidence_proves_temporal_difference():
+    from alpha_mas.research.tools import FactorInput
+
+    tools = ResearchTools()
+    for factor in ["earnings_snapshot", "earnings_asof"]:
+        result = tools.backtest(BacktestConfig.model_validate({"factor": factor}))
+        assert result.leakage_detected is None
+        assert result.challenge_version == "earnings-revisions-v1"
+        evidence = tools.alignment(FactorInput.model_validate({"factor": factor}))
+        assert "verdict" not in evidence and "leakage_detected" not in evidence
+        assert evidence["source_records"]
+        actual_violations = (tools.panel[f"{factor}_available_at"] > tools.panel.decision_at).any()
+        assert tools.temporal_gate(factor)["available_before_decision"] == (not actual_violations)
+        assert actual_violations == (factor == "earnings_snapshot")
+    # The repaired calculation really selects different historical values, not a renamed factor.
+    assert (tools.panel.earnings_asof != tools.panel.earnings_snapshot).any()
+
+
 def test_tools_validate_allowlist_and_arguments():
     tools = ResearchTools()
     with pytest.raises(ValueError, match="allowlisted"):

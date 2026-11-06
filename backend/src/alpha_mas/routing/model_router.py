@@ -71,6 +71,12 @@ class ModelRouter:
                         "configure pricing before using a hard cost budget"
                     )
                 self.registry.provider(config)
+        if request.experiment and request.experiment.parallel_tools:
+            config = self.resolve("lead")
+            if self.registry.entry(config).capabilities.parallel_tool_calls is not True:
+                raise ValueError(
+                    "The parallel-tools control requires documented parallel tool calls"
+                )
 
     async def invoke(
         self, task: AgentTask, messages: list[Message], tools: list[ToolDefinition]
@@ -130,13 +136,20 @@ class ModelRouter:
                 status="running",
                 provider=config.provider,
                 model=config.model,
-                metadata={"simulated": config.provider == "mock"},
+                metadata={
+                    "simulated": config.provider == "mock",
+                    "simulated_latency_ms": self.run.request.experiment.simulated_latency_ms
+                    if self.run.request.experiment
+                    else 0,
+                },
             )
             started = time.monotonic()
             response = None
             failure = None
             try:
                 provider = self.registry.provider(config)
+                if self.run.request.experiment and config.provider == "mock":
+                    await asyncio.sleep(self.run.request.experiment.simulated_latency_ms / 1000)
                 response = await provider.generate(messages, tools or None, config)
             except ProviderError as exc:
                 failure = exc

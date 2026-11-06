@@ -5,7 +5,18 @@ from enum import StrEnum
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+Factor = Literal[
+    "momentum",
+    "earnings",
+    "sentiment",
+    "combined",
+    "random",
+    "future_leak",
+    "earnings_snapshot",
+    "earnings_asof",
+]
 
 
 def uid() -> str:
@@ -138,6 +149,12 @@ class ResearchTask(Contract):
     target_days: Literal[5] = 5
 
 
+class ExperimentControls(Contract):
+    case_id: Literal["independent-work-v1", "review-repair-v1"]
+    parallel_tools: bool = False
+    simulated_latency_ms: int = Field(default=0, ge=0, le=1000)
+
+
 class RunRequest(Contract):
     task: ResearchTask = Field(default_factory=ResearchTask)
     pattern: Pattern = Pattern.BASELINE
@@ -146,6 +163,16 @@ class RunRequest(Contract):
     budget: Budget = Field(default_factory=Budget)
     max_revisions: int = Field(default=2, ge=1, le=4)
     inject_leak: bool = True
+    experiment: ExperimentControls | None = None
+
+    @model_validator(mode="after")
+    def validate_experiment(self):
+        if self.experiment:
+            if self.experiment.parallel_tools and self.pattern != Pattern.BASELINE:
+                raise ValueError("Parallel-tools control requires the Single-Agent baseline")
+            if self.experiment.simulated_latency_ms and self.mode != "demo":
+                raise ValueError("Simulated latency is available only in Demo Mode")
+        return self
 
 
 class AgentIdentity(Contract):
@@ -176,7 +203,7 @@ class EvidenceReference(Contract):
 
 
 class BacktestConfig(Contract):
-    factor: Literal["momentum", "earnings", "sentiment", "combined", "random", "future_leak"]
+    factor: Factor
     cost_bps: float = Field(default=10.0, ge=0, le=1000)
     split_fraction: float = Field(default=0.65, ge=0.4, le=0.8)
     horizon_days: Literal[5] = 5
@@ -186,6 +213,7 @@ class BacktestResult(Contract):
     config: BacktestConfig
     dataset_version: str = "synthetic-v1"
     synthetic: bool = True
+    challenge_version: str | None = None
     observations: int
     information_coefficient: float
     train_ic: float
@@ -195,7 +223,7 @@ class BacktestResult(Contract):
     turnover: float
     max_drawdown: float
     period_returns: list[float]
-    leakage_detected: bool
+    leakage_detected: bool | None
     methodology: str
     limitations: list[str]
 
@@ -220,6 +248,23 @@ class ResearchFinding(Contract):
     status: str = "unverified"
     version: int = 1
     timestamp: str = Field(default_factory=now)
+    candidate_id: str | None = None
+    supersedes_finding_id: str | None = None
+
+
+class ReviewDecision(Contract):
+    finding_id: str
+    candidate_id: str
+    version: int = Field(ge=1)
+    verdict: Literal["accepted", "rejected", "inconclusive"]
+    evidence_refs: list[str] = Field(min_length=1, max_length=8)
+    observations: list[str] = Field(min_length=1, max_length=8)
+    reviewer_agent_id: str | None = None
+
+
+class AgentProposal(Contract):
+    finding_ids: list[str] = Field(max_length=12)
+    rationale: str = Field(min_length=1, max_length=2000)
 
 
 class ResearchArtifact(Contract):

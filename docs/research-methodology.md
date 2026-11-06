@@ -32,3 +32,27 @@ held-out. Do not label the displayed net return an out-of-sample portfolio resul
 No slippage, market impact, borrow costs, corporate actions, real survivorship, capacity or liquidity
 constraints are modeled. Additional intentional timestamp/correlation defects and fitted alpha
 validation are future work. A positive synthetic result is not evidence of investable alpha.
+# Earnings revision challenge
+
+`data/challenges/earnings-revisions-v1.csv` is a separate synthetic revision ledger derived from
+the original earnings fixture, with a checksum manifest and seeded eight-business-day revisions.
+Regenerate it with `uv run python scripts/generate_review_fixture.py`. The original synthetic-v1
+market snapshot is unchanged. Revisions are fabricated challenge data, not historical disclosures.
+
+`earnings_snapshot` joins the latest revision at the original release availability. `earnings_asof`
+joins each source version at its actual availability. Both compute real backtests against the same
+five-day target. Their backtests return `leakage_detected: null`: performance is not a validity check.
+`inspect_temporal_alignment` returns selected record IDs, decision times and availability evidence,
+without a verdict. A model submits a typed, evidence-citing review for the exact finding/version.
+The legacy verdict-returning leakage tool is unavailable in controlled research/review assignments.
+
+After a structured agent proposal is recorded, a common deterministic gate checks all selected
+records and forward dependencies. Publication states are `verified_valid`, `known_invalid` and
+`unverified`. A review must accept the exact version for a valid candidate to be published. Original
+findings, rejected versions, reviewer misses and blocked recommendations remain inspectable.
+Repairs have new finding IDs and explicit version/supersedes links; renaming a factor is not a repair.
+
+MockProvider applies the same explicitly scripted timestamp rule in every reviewing role. Demo
+success measures coordination and grading mechanics. Only separately authorized live observations
+could establish whether independent review catches more issues than self-review.
+

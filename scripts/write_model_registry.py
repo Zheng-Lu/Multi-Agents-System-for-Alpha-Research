@@ -25,7 +25,7 @@ def entry(
         notes=notes or "Documentation checked; live smoke pending.",
         capabilities=dict(
             tool_calling=True,
-            parallel_tool_calls=None,
+            parallel_tool_calls=True if provider == "mock" else None,
             structured_output=structured,
             streaming=False,
             reasoning_mode=reasoning,
