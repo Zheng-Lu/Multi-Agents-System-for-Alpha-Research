@@ -137,6 +137,9 @@ async def test_missed_review_and_bad_proposal_remain_visible_but_blocked(store, 
             instruction = json.loads(
                 next(m.content for m in reversed(messages) if m.role == "user")
             )
+            if instruction["phase"] == "synthesize":
+                assert instruction["agent_recommendations"] == []
+                assert any(g["state"] == "known_invalid" for g in instruction["publication_states"])
             for call in response.tool_calls:
                 if call.name == "submit_review":
                     call.arguments["verdict"] = "accepted"
@@ -298,3 +301,21 @@ async def test_parallel_control_uses_concurrent_tools_with_one_context(
     assert peak == 3
     starts = [e for e in store.events(run.run_id) if e["event_type"] == "agent.started"]
     assert len(starts) == 1
+
+
+async def test_controlled_repair_exhaustion_preserves_invalid_original(store, registry):
+    run = ResearchRun(
+        request=RunRequest(
+            pattern=Pattern.GENERATOR_VERIFIER,
+            max_revisions=1,
+            budget=Budget(max_calls_per_agent=40),
+            experiment=ExperimentControls(case_id="review-repair-v1"),
+        )
+    )
+    await Runtime(run, store, registry).execute()
+    assert run.status == "completed", run.error
+    report = next(a["payload"] for a in store.artifacts(run.run_id) if a["kind"] == "report")
+    assert len(report["findings"]) == 2
+    assert not any(f["hypothesis"]["factor"] == "earnings_asof" for f in report["findings"])
+    assert any(g["state"] == "known_invalid" for g in report["publication"])
+    assert any(e["event_type"] == "verification.exhausted" for e in store.events(run.run_id))

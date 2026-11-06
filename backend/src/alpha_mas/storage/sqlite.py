@@ -133,8 +133,12 @@ class Store:
                 for r in conn.execute("SELECT name,payload FROM configurations ORDER BY name")
             ]
 
-    def save_comparison(self, group: dict) -> None:
+    def save_comparison(self, group: dict, runs: list[ResearchRun] | None = None) -> None:
         with self.connect() as conn:
+            for run in runs or []:
+                conn.execute(
+                    "INSERT INTO runs VALUES(?,?)", (run.run_id, redact(run.model_dump_json()))
+                )
             conn.execute(
                 "INSERT INTO comparisons VALUES(?,?)",
                 (group["comparison_id"], redact(json.dumps(group))),

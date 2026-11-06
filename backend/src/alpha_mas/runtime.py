@@ -744,6 +744,16 @@ class Runtime:
         summary, _ = await session.ask(
             {
                 "phase": "synthesize",
+                "publication_states": gates,
+                "agent_recommendations": [
+                    i
+                    for i in proposal.finding_ids
+                    if any(g["finding_id"] == i and g["state"] == "verified_valid" for g in gates)
+                ]
+                if proposal
+                else None,
+                "summary_policy": "Describe blocked/unverified versions as limitations. "
+                "Recommend only the IDs in agent_recommendations when present.",
                 "findings": [
                     {
                         "factor": f.hypothesis.factor,

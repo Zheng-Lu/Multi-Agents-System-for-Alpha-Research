@@ -211,7 +211,7 @@ def create_app(db_path: str | None = None, registry: Registry | None = None) -> 
                 runtime.router.preflight()
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
-        store.save_comparison(group)
+        store.save_comparison(group, runs)
         serial = asyncio.Lock()
         for run, runtime in zip(runs, runtimes, strict=True):
             comparison_active.add(run.run_id)
