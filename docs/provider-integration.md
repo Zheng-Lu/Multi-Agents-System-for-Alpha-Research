@@ -1,5 +1,11 @@
 # Provider integration
 
+Controlled-v1 review/proposal tools have mocked runtime/API coverage only. Existing OpenAI live
+samples validate the original baseline and Generator–Verifier exercises, not these new challenges.
+Selecting a controlled preset in an individual live run is explicit paid opt-in; the one-click
+comparison endpoint always runs MockProvider. Parallel-tools controls require an explicitly true
+model-level parallel-tool capability; unknown capability is rejected rather than assumed.
+
 Documentation snapshot: 2026-10-28. **All six adapters tested with mocked HTTP. OpenAI baseline live validation
 completed on 2026-10-29; other providers await live validation.** See the
 [recorded live result](samples/openai-live-smoke.json). Documentation presence does not establish account access, region support or

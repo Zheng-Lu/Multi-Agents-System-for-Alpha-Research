@@ -13,6 +13,9 @@ Python 3.12+, uv, Node 22.12+ (or 24), npm. Work from the repository root.
 - Distinguish Anthropic definitions from lab implementation choices. Never advertise pending patterns.
 - Use scoped agent contexts; no shared global transcript. Worker failure must cancel sibling tasks.
 - Use small validated commits. Do not introduce frameworks without a concrete need.
+- Controlled-v1 groups freeze workload/model/backtest settings and aggregate budgets. Preserve the
+  single-context parallel-tools control, all failures and three publication states. Reviewing agents
+  receive timestamp evidence, never the grading oracle. Never script a baseline failure or MAS win.
 
 Commands:
 
@@ -22,6 +25,7 @@ uv run ruff check backend scripts
 uv run ruff format --check backend scripts
 uv run mypy
 uv run pytest -q
+uv run python scripts/evaluate.py --case review-repair-v1 --repetitions 1 --output /tmp/review.json
 npm ci --prefix frontend
 npm run format:check --prefix frontend
 npm run lint --prefix frontend

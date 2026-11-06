@@ -5,8 +5,10 @@ research task. Model decisions are simulated in Demo Mode; coordination, typed t
 SQLite persistence and event streaming execute locally.
 
 **Current delivery:** Single-Agent baseline, Generator–Verifier and Orchestrator–Subagent work
-end to end. Six provider adapters are implemented and tested with mocked HTTP.
-**OpenAI now passes a real baseline smoke test**; other providers await live validation. Agent Teams, Message Bus, Shared State and Hybrid
+end to end, with controlled demo scorecards and a Single-Agent parallel-tools control.
+Six provider adapters are implemented and tested with mocked HTTP.
+**OpenAI passes real baseline and Generator–Verifier smoke tests for the original demos**;
+the new challenge loops and other providers await live validation. Agent Teams, Message Bus, Shared State and Hybrid
 remain disabled in the UI. This is a working initial increment, not the complete brief.
 See [milestone status and continuation](docs/status.md).
 
@@ -84,6 +86,37 @@ if it cannot complete. A conservative allowance can stop it before the first cal
 Cost figures are estimates, not guaranteed billing caps. See [provider integration](docs/provider-integration.md).
 
 ## Check and evaluate
+
+Open **Compare** to run either **Independent work** or **Review and repair**. One action executes
+four variants over the same frozen candidates, model, costs, data and run budgets. Variants run
+one at a time; each can use its own concurrency. Groups, individual failures and traces persist.
+Click **Inspect run** to see a graph/report, or reopen a saved comparison after restarting the app.
+
+The comparison action always uses MockProvider, even when an individual-run live model is selected.
+Delay defaults to zero; 100/250 ms simulated model-call delays are optional and visibly labeled.
+Demo token counts are estimates and API cost is zero. These measurements explain mechanisms;
+they do not establish live model quality or an economic advantage for multiple agents.
+
+The review challenge uses a separate synthetic earnings-revision ledger. Reviewing agents interpret
+timestamp evidence and submit versioned decisions. All patterns have one publication gate: invalid
+and unverified recommendations are blocked, and remain inspectable. The demo applies the same
+scripted evidence rule to self-review and independent review; a Single-Agent failure is not staged.
+
+The sidebar's **Research preset** also enables an individual controlled run. Its budgets include
+aggregate tokens/calls in addition to per-agent, cost, step and runtime limits. The UI defaults to
+40 calls per agent and 40 calls total per run, with 200,000 aggregate tokens and 48,000 per agent.
+Controlled live loops are not yet live-validated and require the existing explicit server opt-in.
+
+Reproduce the two controlled comparisons without credentials:
+
+```sh
+uv run python scripts/evaluate.py --case independent-work-v1 --repetitions 2 --output /tmp/independent.json
+uv run python scripts/evaluate.py --case review-repair-v1 --repetitions 2 --output /tmp/review.json
+```
+
+The original process checks remain available with `--case legacy` (the default).
+
+![Controlled comparison scorecard](docs/comparison-screenshot.png)
 
 ```sh
 make check

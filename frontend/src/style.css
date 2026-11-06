@@ -876,3 +876,80 @@ a:focus-visible {
     height: 75vh;
   }
 }
+.comparison-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 22px 0;
+}
+.comparison-controls label {
+  flex: 1;
+  min-width: 210px;
+}
+.comparison-controls .primary {
+  width: auto;
+  margin: 0;
+}
+.comparison-controls-summary,
+.proposal-panel {
+  background: #111c25;
+  border: 1px solid #30404b;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.comparison-controls-summary p {
+  margin: 8px 0;
+}
+.scorecard {
+  min-width: 720px;
+  table-layout: fixed;
+}
+.scorecard th {
+  text-align: left;
+  vertical-align: top;
+}
+.scorecard th:first-child {
+  width: 28%;
+}
+.scorecard th,
+.scorecard td {
+  overflow-wrap: anywhere;
+}
+.scorecard th button {
+  display: block;
+  margin-top: 10px;
+  font-weight: normal;
+}
+.scorecard small {
+  display: block;
+  max-width: 210px;
+  white-space: normal;
+}
+.comparison-takeaways li {
+  margin: 10px 0;
+}
+.publication {
+  font-size: 12px;
+}
+.publication.verified_valid {
+  color: #7fdbc1;
+}
+.publication.known_invalid {
+  color: #f4a3a3;
+}
+.publication.unverified,
+.publication.unknown {
+  color: #edca83;
+}
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.checkbox-label input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}

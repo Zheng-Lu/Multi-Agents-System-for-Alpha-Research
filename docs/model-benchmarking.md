@@ -11,7 +11,13 @@ Mixed-team optimization: explicitly vary role assignments under a common total b
 fallback-enabled experiments separately; a fallback changes model identity and may move data only
 when explicitly authorized.
 
-The initial `scripts/evaluate.py` runs the three available architectures under a common MockProvider
+The controlled-v1 slice uses two frozen workloads and four variants (including the single-context
+parallel-tools control). Its Demo-only group endpoint fixes MockProvider and identical aggregate
+budgets. Serial variant execution prevents cross-run timing contention. Review decisions, proposals
+and publication grading are separate measurements; no model win is inferred from a metric sort.
+This is a mechanics comparison, not a model benchmark. See evaluation.md for metric definitions.
+
+The legacy `scripts/evaluate.py --case legacy` runs the three available architectures under a common MockProvider
 and repeated fixed task. It checks research-process outcomes and records calls, tools, usage
 approximations and local latency. Generator–Verifier additionally includes its mechanism-specific
 invalid candidate. Coverage and added work differ; this is not a controlled estimate of quality gains.

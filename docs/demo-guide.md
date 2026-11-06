@@ -1,8 +1,47 @@
-# Leadership demonstration — initial increment (10–15 minutes)
+# Leadership demonstration — controlled comparison (10–15 minutes)
 
 Preparation: follow README startup, keep the backend on loopback, use Demo Mode. No internet,
 credentials or manual database edits are needed after dependency installation. This demonstrates
-three mechanisms, not all five. Use the UI's pending entries to explain the remaining work honestly.
+the baseline and two official patterns, not all five. Use pending UI entries to explain remaining work.
+
+1. **0–2 min: freeze the control.** Open Compare. Select Independent work and 0 ms simulated delay.
+   Run controlled demo. Show that all four variants share candidates, mock model, dataset, costs,
+   aggregate budgets and per-agent limits. Variants execute one at a time. The fourth column is a
+   Single Agent using concurrent tools in one context, not another official coordination pattern.
+2. **2–4 min: read the scorecard.** Inspect calls/tools, evidence coverage, peak input count,
+   wall time and publication validity. Ties are visible. Mock tokens are estimates; zero API cost
+   and local timing cannot prove a live-provider economic advantage. Optionally repeat with 100 ms
+   simulated delay, keeping its label visible. This illustrates concurrency, not a measured API gain.
+3. **4–7 min: review and repair.** Select Review and repair and run again at zero delay. All variants
+   inspect an earnings snapshot using revised values unavailable at the decision time, reject it,
+   and compute an as-of repair. This identical scripted evidence rule does not establish independent
+   review superiority. A live reviewer could miss the issue; the common gate would still block it.
+4. **7–10 min: inspect the evidence chain.** Inspect the Generator–Verifier run. Show separate
+   contexts and feedback in the graph. In Research report, show the original known-invalid finding,
+   version 2, the agent proposal and three publication states. Evidence & trace exposes selected
+   source versions, timestamps, review artifacts and causal references. The backtest itself does
+   not declare the revision candidate valid. Drag nodes and use Show tools / Fit graph as needed.
+5. **10–12 min: compare boundaries and replay.** Inspect the Single Agent and the Orchestrator.
+   Contrast one context with scoped worker handoffs. Reopen the saved group after reloading the
+   page. Replay a member run: it reads stored events and does not invoke a model. Provider/model
+   identity remains visible in the node inspector. The comparison action always uses MockProvider.
+6. **12–15 min: limits and next evidence.** Optionally set Aggregate calls per run to 1 and create
+   another group. Every failed variant remains visible with unknown proposal validity; none is
+   removed from the cohort. Restore the allowance to 40 afterward. Explain that original OpenAI
+   baseline/Generator–Verifier loops have live evidence, while the controlled review loops still
+   require a separately authorized live campaign. Persistent Teams, bus, board and Hybrid are pending.
+
+Backup: use saved comparison groups in the local SQLite database, or regenerate without external
+services. CLI: `uv run python scripts/evaluate.py --case review-repair-v1 --repetitions 2 --output /tmp/review.json`.
+The JSON is a measurement backup, not an importable UI replay bundle. The default CLI case remains
+the legacy descriptive process check. A fresh clone can regenerate both controlled cases.
+
+![Computed controlled comparison](comparison-screenshot.png)
+
+## Optional original mechanism walkthrough
+
+Use Research preset → Mechanism demo for the original exercises. Their workloads differ; use them
+to explain control flow, not to estimate a coordination quality advantage.
 
 1. **0–2 min: establish the control.** Select Single Agent, run the fixed task. One context uses
    actual backtest tools across momentum, earnings and sentiment. Open Research report and show

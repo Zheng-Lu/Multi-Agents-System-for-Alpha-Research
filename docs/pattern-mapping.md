@@ -25,6 +25,15 @@ Acceptance tests live in `backend/tests/test_runtime_api.py`. API/persistence/pr
 are separately tested. Failures terminate a run with partial artifacts; revision exhaustion is a
 completed research execution whose candidate is rejected, not a falsely accepted candidate.
 
+Controlled workloads are additional lab experiments, not official pattern definitions. Their
+Generator–Verifier path uses separate researcher/reviewer sessions, evidence-based model reviews,
+feedback and bounded repairs. Baseline uses the same tools and one session for self-review; its
+parallel-tools variant concurrently executes validated calls without starting other agent contexts.
+Orchestrator workers independently research and self-review their assigned candidates before
+returning findings/reviews to the lead. All variants submit proposals before a common publication
+gate grades versions. Recheck of the official source on 2026-11-04 retained these lifetime and
+communication boundaries. Coverage: test_comparison.py and test_comparison_api.py.
+
 Supplementary sources consulted:
 
 - [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents): prefer simple composable mechanisms and explicit tool interfaces.

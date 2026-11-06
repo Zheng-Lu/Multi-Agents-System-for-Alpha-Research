@@ -1,5 +1,44 @@
 # Delivery status and continuation
 
+**Current: controlled Demo comparisons are delivered.** The baseline, Generator–Verifier and
+Orchestrator–Subagent work; Agent Teams, Shared State, Message Bus and Hybrid remain pending.
+Original OpenAI baseline/Generator–Verifier live evidence remains valid for those original workflows.
+No live campaign for the new challenges has been run.
+
+## 2026-11-06 — Scorecard, browser validation and demonstration
+
+The Compare view now starts either frozen case across four variants, shows side-by-side scores,
+controls, simulated delay, incomplete usage, tied outcomes and failures. Groups survive reloads;
+Inspect run opens the actual execution graph/report and subscribes to unfinished runs. Reports
+show typed agent proposals, reviewer identities in artifacts, original/repaired versions, publication
+states and blocked recommendations. Comparison creation atomically persists the cohort. Queued
+members can be cancelled without invoking a provider. Synthesis receives the publication boundary.
+
+All four scorecard columns fit the desktop console; small screens scroll the table without page
+overflow. Graph dragging/replay and existing original demonstrations remain available. See the
+updated demo-guide.md and comparison-screenshot.png. Execution budgets are configurable in the sidebar,
+including aggregate calls/tokens; the comparison action always uses MockProvider.
+
+Executed checks: 68 pytest tests; Ruff lint and format; mypy; two Vitest interaction tests; ESLint;
+Prettier; TypeScript/Vite build; all seven Chromium flows. After the final scorecard responsive
+adjustment, both comparison browser flows passed again, including desktop width, narrow layout,
+persisted groups, report inspection, no-inference replay and explicit budget-failure outcomes.
+Chromium was missing in this environment and was installed before successful browser validation.
+Two repetitions of each controlled preset completed (16 retained runs), and six legacy process
+executions passed. Ordinary tests and all executions this session used Demo Mode or mocked providers.
+No paid calls, deployment or real market-data claims. GitHub Actions was extended but has not yet
+been verified remotely. Local checks used the available macOS/Python environment, not Linux CI.
+
+Implementation commits: 717dce6 (budgets/peaks), ae9f37b (workloads/reviews/gates/API), eb45470
+(atomic cohort persistence and synthesis boundary); the scorecard/documentation increment follows.
+
+Precise next step: a separately authorized, bounded OpenAI pilot on the new individual controlled
+presets, with fixed code/configuration and retained successes/failures. Verify the review/proposal
+tool loop and usage before planning repeated live samples. The one-click group endpoint intentionally
+remains Demo-only. Equal-cost curves, a general grading framework, the wider factor sweep and Phase
+2/3 collaboration infrastructure are deferred. No current result establishes that independent
+review is more reliable than self-review; demo reviewers intentionally use the same evidence rule.
+
 ## 2026-11-06 — Controlled workloads and review boundary
 
 Implemented independent-work-v1 and review-repair-v1 across the Single-Agent, Generator–Verifier
@@ -33,7 +72,7 @@ See decisions/002-controlled-comparisons.md for the scoped comparison design.
 Validation: 48 backend tests, Ruff and mypy pass. No paid inference. Next: versioned challenge
 evidence, structured proposals/reviews, common publication gate and controlled scorecards.
 
-Latest update (2026-10-29): **OpenAI baseline and Generator–Verifier pass live smoke tests.**
+Historical update (2026-10-29): **OpenAI baseline and Generator–Verifier pass live smoke tests.**
 See the final progress entry and [measured result](samples/openai-live-smoke.json). Earlier entries
 below preserve the state at their original delivery dates.
 

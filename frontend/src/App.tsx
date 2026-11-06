@@ -1,14 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
+import { Compare } from './Compare';
 import { Graph } from './Graph';
 import type {
   Artifact,
   Assignments,
+  Budget,
+  CasePreset,
   Finding,
   ModelConfig,
   ModelEntry,
   Pattern,
   Report,
+  Publication,
   Run,
   Trace,
 } from './types';
@@ -41,6 +45,9 @@ export default function App() {
   const [prompt, setPrompt] = useState(
     'Evaluate momentum, earnings and news signals for 5-day returns. Identify leakage and compare cost-adjusted evidence.',
   );
+  const [cases, setCases] = useState<CasePreset[]>([]);
+  const [caseId, setCaseId] = useState('');
+  const [parallelTools, setParallelTools] = useState(false);
   const [assignments, setAssignments] = useState<Assignments>({ default: mock, roles: {} });
   const [saved, setSaved] = useState<{ name: string; models: Assignments }[]>([]),
     [configName, setConfigName] = useState('My research team');
@@ -55,7 +62,9 @@ export default function App() {
     [showModels, setShowModels] = useState(false);
   const [cost, setCost] = useState(0.1),
     [tokens, setTokens] = useState(48000),
-    [calls, setCalls] = useState(10),
+    [calls, setCalls] = useState(40),
+    [runCalls, setRunCalls] = useState(40),
+    [runTokens, setRunTokens] = useState(200000),
     [steps, setSteps] = useState(80),
     [seconds, setSeconds] = useState(120);
   const [replaying, setReplaying] = useState(false),
@@ -68,6 +77,21 @@ export default function App() {
     .filter((a) => a.kind === 'finding')
     .map((a) => a.payload as unknown as Finding);
   const active = !!run && !terminal.includes(run.status);
+  const budget: Budget = {
+    max_cost_usd: cost,
+    max_tokens_per_agent: tokens,
+    max_calls_per_agent: calls,
+    max_calls_per_run: runCalls,
+    max_tokens_per_run: runTokens,
+    max_steps: steps,
+    max_runtime_seconds: seconds,
+    max_retries: 1,
+  };
+  const refreshHistory = useCallback(() => {
+    api<Run[]>('/runs')
+      .then(setHistory)
+      .catch((e) => setError(e.message));
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -75,12 +99,14 @@ export default function App() {
       api<ModelEntry[]>('/models'),
       api<Run[]>('/runs'),
       api<{ name: string; models: Assignments }[]>('/model-configurations'),
+      api<CasePreset[]>('/tasks/presets'),
     ])
-      .then(([p, m, h, s]) => {
+      .then(([p, m, h, s, c]) => {
         setPatterns(p);
         setModels(m);
         setHistory(h);
         setSaved(s);
+        setCases(c.filter((item) => item.case_id));
       })
       .catch((e) => setError(e.message));
     return () => source.current?.close();
@@ -100,6 +126,7 @@ export default function App() {
     setRun(r);
     setArtifacts(a);
     setHistory(h);
+    return r;
   }
   function subscribe(id: string) {
     source.current?.close();
@@ -132,16 +159,16 @@ export default function App() {
         mode,
         task: { prompt },
         models: assignments,
-        budget: {
-          max_cost_usd: cost,
-          max_tokens_per_agent: tokens,
-          max_calls_per_agent: calls,
-          max_steps: steps,
-          max_runtime_seconds: seconds,
-          max_retries: 1,
-        },
+        budget,
         max_revisions: 2,
-        inject_leak: true,
+        inject_leak: !caseId,
+        experiment: caseId
+          ? {
+              case_id: caseId,
+              parallel_tools: pattern === 'baseline' && parallelTools,
+              simulated_latency_ms: 0,
+            }
+          : null,
       });
       setRun(r);
       subscribe(r.run_id);
@@ -158,8 +185,9 @@ export default function App() {
     setSelected(null);
     setError('');
     try {
-      await refresh(id);
+      const opened = await refresh(id);
       setEvents(await api<Trace[]>(`/runs/${id}/events`));
+      if (!terminal.includes(opened.status)) subscribe(id);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -287,6 +315,36 @@ export default function App() {
             </select>
           </label>
           <p className="mechanism">{patterns.find((p) => p.id === pattern)?.mechanism}</p>
+          <label>
+            Research preset
+            <select
+              aria-label="Research preset"
+              value={caseId}
+              disabled={active}
+              onChange={(e) => {
+                setCaseId(e.target.value);
+                const selected = cases.find((c) => c.case_id === e.target.value);
+                if (selected) setPrompt(selected.prompt);
+              }}
+            >
+              <option value="">Mechanism demo · workloads differ</option>
+              {cases.map((c) => (
+                <option key={c.case_id} value={c.case_id}>
+                  {c.name} · controlled workload
+                </option>
+              ))}
+            </select>
+          </label>
+          {!!caseId && pattern === 'baseline' && (
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={parallelTools}
+                onChange={(e) => setParallelTools(e.target.checked)}
+              />
+              Parallel research tools · one context
+            </label>
+          )}
           <label>
             Research task
             <textarea
@@ -442,6 +500,28 @@ export default function App() {
                   type="number"
                   value={calls}
                   onChange={(e) => setCalls(Number(e.target.value))}
+                />
+              </label>
+              <label>
+                Aggregate calls per run
+                <input
+                  aria-label="Aggregate calls per run"
+                  type="number"
+                  min="1"
+                  max="160"
+                  value={runCalls}
+                  onChange={(e) => setRunCalls(Number(e.target.value))}
+                />
+              </label>
+              <label>
+                Aggregate tokens per run
+                <input
+                  aria-label="Aggregate tokens per run"
+                  type="number"
+                  min="1"
+                  max="800000"
+                  value={runTokens}
+                  onChange={(e) => setRunTokens(Number(e.target.value))}
                 />
               </label>
               <label>
@@ -663,7 +743,46 @@ export default function App() {
                       Attempt {v.attempt}: <strong>{v.verdict}</strong> {v.feedback.join(' ')}
                     </p>
                   ))}
-                  <Results findings={report.findings} />
+                  {report.agent_proposal && (
+                    <div className="proposal-panel">
+                      <h3>Agent proposal · recorded before deterministic grading</h3>
+                      <p>{report.agent_proposal.rationale}</p>
+                      {report.agent_proposal.finding_ids.length ? (
+                        <ol>
+                          {report.agent_proposal.finding_ids.map((id) => {
+                            const f = report.findings.find((item) => item.finding_id === id);
+                            const state =
+                              report.publication?.find((g) => g.finding_id === id)?.state ??
+                              'unverified';
+                            return (
+                              <li key={id}>
+                                {f?.hypothesis.factor ?? id} · version {f?.version}{' '}
+                                <span className={`publication ${state}`}>
+                                  {state.replaceAll('_', ' ')}
+                                </span>{' '}
+                                {report.blocked_recommendations?.includes(id) && (
+                                  <strong>Blocked from publication</strong>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      ) : (
+                        <p>No recommendation submitted.</p>
+                      )}
+                      <p>
+                        Published: {report.published_recommendations?.length ?? 0} · Blocked:{' '}
+                        {report.blocked_recommendations?.length ?? 0}
+                      </p>
+                    </div>
+                  )}
+                  {report.reviews?.map((r, i) => (
+                    <p key={i} className={r.verdict === 'accepted' ? 'accepted' : 'rejected'}>
+                      {r.candidate_id} · version {r.version}: <strong>{r.verdict}</strong>{' '}
+                      {r.observations.join(' ')}
+                    </p>
+                  ))}
+                  <Results findings={report.findings} publication={report.publication} />
                   <h3>Methodology</h3>
                   <p>{report.findings[0]?.result.methodology}</p>
                   <h3>Limitations</h3>
@@ -708,62 +827,75 @@ export default function App() {
             </>
           )}
           {tab === 'Compare' && (
-            <section className="panel">
-              <h2>Run measurements</h2>
-              <p className="muted">
-                Descriptive measurements. Fix model assignments, task, data and budget before
-                attributing a difference to architecture. Automated controlled comparisons are
-                pending.
-              </p>
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Architecture / mode</th>
-                      <th>Models</th>
-                      <th>Cost budget</th>
-                      <th>Calls / tools</th>
-                      <th>Tokens</th>
-                      <th>Est. cost</th>
-                      <th>Time</th>
-                      <th>Outcome</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map((r) => (
-                      <tr key={r.run_id}>
-                        <td>
-                          <button onClick={() => openRun(r.run_id)}>{r.request.pattern}</button>
-                          <small>
-                            {r.request.mode} · {r.run_id.slice(0, 8)}
-                          </small>
-                        </td>
-                        <td>
-                          {key(r.request.models.default)}
-                          <small>
-                            {Object.entries(r.request.models.roles)
-                              .map(([role, m]) => `${role}: ${key(m)}`)
-                              .join('; ') || 'Homogeneous'}
-                          </small>
-                        </td>
-                        <td>${r.request.budget.max_cost_usd}</td>
-                        <td>
-                          {r.metrics.model_calls} / {r.metrics.tool_calls}
-                        </td>
-                        <td>{r.metrics.input_tokens + r.metrics.output_tokens}</td>
-                        <td>
-                          {r.metrics.cost_complete
-                            ? `$${r.metrics.estimated_cost_usd?.toFixed(5)}`
-                            : 'Unknown'}
-                        </td>
-                        <td>{(r.metrics.latency_ms / 1000).toFixed(2)}s</td>
-                        <td>{r.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+            <>
+              <Compare
+                cases={cases}
+                budget={budget}
+                onFinished={refreshHistory}
+                onOpen={async (id) => {
+                  await openRun(id);
+                  setTab('Architecture');
+                }}
+              />
+              <section className="panel">
+                <details>
+                  <summary>Other run history · descriptive measurements</summary>
+                  <p className="muted">
+                    Descriptive measurements. Fix model assignments, task, data and budget before
+                    attributing a difference to architecture. Use a controlled group above for a
+                    matched workload.
+                  </p>
+                  <div className="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Architecture / mode</th>
+                          <th>Models</th>
+                          <th>Cost budget</th>
+                          <th>Calls / tools</th>
+                          <th>Tokens</th>
+                          <th>Est. cost</th>
+                          <th>Time</th>
+                          <th>Outcome</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {history.map((r) => (
+                          <tr key={r.run_id}>
+                            <td>
+                              <button onClick={() => openRun(r.run_id)}>{r.request.pattern}</button>
+                              <small>
+                                {r.request.mode} · {r.run_id.slice(0, 8)}
+                              </small>
+                            </td>
+                            <td>
+                              {key(r.request.models.default)}
+                              <small>
+                                {Object.entries(r.request.models.roles)
+                                  .map(([role, m]) => `${role}: ${key(m)}`)
+                                  .join('; ') || 'Homogeneous'}
+                              </small>
+                            </td>
+                            <td>${r.request.budget.max_cost_usd}</td>
+                            <td>
+                              {r.metrics.model_calls} / {r.metrics.tool_calls}
+                            </td>
+                            <td>{r.metrics.input_tokens + r.metrics.output_tokens}</td>
+                            <td>
+                              {r.metrics.cost_complete
+                                ? `$${r.metrics.estimated_cost_usd?.toFixed(5)}`
+                                : 'Unknown'}
+                            </td>
+                            <td>{(r.metrics.latency_ms / 1000).toFixed(2)}s</td>
+                            <td>{r.status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              </section>
+            </>
           )}
           <footer>
             <span>ALPHA MAS LAB / 0.1</span>
@@ -800,7 +932,7 @@ function Empty({ text }: { text: string }) {
     </div>
   );
 }
-function Results({ findings }: { findings: Finding[] }) {
+function Results({ findings, publication }: { findings: Finding[]; publication?: Publication[] }) {
   return findings.length ? (
     <div className="table-scroll">
       <table>
@@ -816,22 +948,40 @@ function Results({ findings }: { findings: Finding[] }) {
           </tr>
         </thead>
         <tbody>
-          {findings.map((f) => (
-            <tr key={f.finding_id}>
-              <td>
-                <strong>{f.hypothesis.factor}</strong>
-                <small>{f.agent_id}</small>
-              </td>
-              <td>{f.result.test_ic.toFixed(4)}</td>
-              <td>{pct(f.result.gross_return)}</td>
-              <td>{pct(f.result.net_return)}</td>
-              <td>{pct(f.result.max_drawdown)}</td>
-              <td className={f.result.leakage_detected ? 'rejected' : 'accepted'}>
-                {f.result.leakage_detected ? 'LEAK · excluded' : 'Temporal gate passed'}
-              </td>
-              <td className="mono">{f.evidence[0]?.artifact_id.slice(0, 8)}</td>
-            </tr>
-          ))}
+          {findings.map((f) => {
+            const gate = publication?.find((g) => g.finding_id === f.finding_id);
+            return (
+              <tr key={f.finding_id}>
+                <td>
+                  <strong>{f.hypothesis.factor}</strong>
+                  <small>{f.agent_id}</small>
+                  {f.candidate_id && (
+                    <small>
+                      {f.candidate_id} · version {f.version}
+                    </small>
+                  )}
+                </td>
+                <td>{f.result.test_ic.toFixed(4)}</td>
+                <td>{pct(f.result.gross_return)}</td>
+                <td>{pct(f.result.net_return)}</td>
+                <td>{pct(f.result.max_drawdown)}</td>
+                <td
+                  className={
+                    gate ? `publication ${gate.state}` : f.result.leakage_detected ? 'rejected' : ''
+                  }
+                >
+                  {gate
+                    ? gate.state.replaceAll('_', ' ')
+                    : f.result.leakage_detected === null
+                      ? 'Unverified · inspect evidence'
+                      : f.result.leakage_detected
+                        ? 'LEAK · excluded'
+                        : 'Temporal gate passed'}
+                </td>
+                <td className="mono">{f.evidence[0]?.artifact_id.slice(0, 8)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

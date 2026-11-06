@@ -5,6 +5,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 export default defineConfig({
   testDir: './e2e',
   timeout: 30000,
+  workers: 1,
   use: { baseURL, headless: true },
   webServer: {
     command: `../.venv/bin/uvicorn alpha_mas.api.app:app --host 127.0.0.1 --port ${port}`,

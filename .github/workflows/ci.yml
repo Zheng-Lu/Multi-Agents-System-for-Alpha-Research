@@ -14,10 +14,15 @@ jobs:
       - run: uv run mypy
       - run: uv run pytest -q
       - run: uv run python scripts/evaluate.py --output /tmp/evaluation.json
+      - run: uv run python scripts/evaluate.py --case independent-work-v1 --repetitions 1 --output /tmp/independent.json
+      - run: uv run python scripts/evaluate.py --case review-repair-v1 --repetitions 1 --output /tmp/review.json
       - uses: actions/upload-artifact@v4
         with:
           name: process-evaluation
-          path: /tmp/evaluation.json
+          path: |
+            /tmp/evaluation.json
+            /tmp/independent.json
+            /tmp/review.json
   frontend:
     runs-on: ubuntu-latest
     steps:

@@ -52,6 +52,33 @@ failed attempts. A single short lock protects allowance accounting, not research
 
 Implementation decisions: [ADR 001](decisions/001-foundation.md). Scope: [status](status.md).
 
+Controlled comparison decisions: [ADR 002](decisions/002-controlled-comparisons.md). `experiments.py`
+defines two frozen workloads and the publication rule; `comparison.py` creates/grades four-run
+groups. SQLite's `comparisons` table retains immutable controls/run IDs. Scores derive from persisted
+runs/artifacts; polling never invokes a model. Comparison variants are serialized with a group-local
+lock outside the measured run lifecycle. Queued variants can be cancelled before inference. Startup
+marks abandoned group members interrupted; it never resumes a paid call.
+
+```mermaid
+flowchart LR
+  Finding[Versioned computed finding] --> Evidence[Timestamp inspection]
+  Evidence --> Review[Model review with artifact references]
+  Review -->|Reject: bounded feedback| Repair[New finding version]
+  Repair --> Evidence
+  Review --> Proposal[Structured agent proposal]
+  Proposal --> Gate[Common deterministic publication gate]
+  Gate --> Published[Verified valid recommendations]
+  Gate --> Blocked[Inspectable invalid or unverified recommendations]
+```
+
+Model reviews must cite an inspection returned in an earlier model turn and identify the exact
+finding/candidate/version. The grading oracle is absent from controlled agent tool allowlists.
+The runtime records reviewer identity. Legacy demos retain their deterministic verifier exercise.
+Every architecture uses the same controlled research tool permissions and backtest settings;
+Single-Agent parallel tools share one model conversation, with concurrent typed tool execution.
+Aggregate run token/call reservations share the router's short accounting lock with per-agent and
+cost allowances. Peak input counts are per invocation, with explicit completeness/simulation labels.
+
 
 Tool-loop bounds: each assignment has one required result (research backtest, independent check or
 lead decomposition). Duplicate requests use a cache keyed by normalized typed arguments and return
